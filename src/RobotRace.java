@@ -5,6 +5,8 @@ import robotrace.Base;
 import robotrace.Texture1D;
 import robotrace.Vector;
 
+import java.nio.FloatBuffer;
+
 /**
  * Handles all of the RobotRace graphics functionality,
  * which should be extended per the assignment.
@@ -164,8 +166,8 @@ public class RobotRace extends Base {
         // Modify this to meet the requirements in the assignment.
         //System.out.println(gs.vWidth + " " + gs.vDist + " " + gs.phi + " " + gs.theta);
         double fovAngle = Math.toDegrees(2 * Math.atan(gs.vWidth / (2 * gs.vDist)));
-//        System.out.println(fovAngle+ " " + gs.vWidth + " " + gs.vDist);
-        glu.gluPerspective(fovAngle, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
+        glu.gluPerspective(60, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
+//        glu.gluPerspective(fovAngle, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
         
         // Set camera.
         gl.glMatrixMode(GL_MODELVIEW);
@@ -375,17 +377,17 @@ public class RobotRace extends Base {
     private class Robot {
         double stickSphereRad = 0.033f;
         Vector neck = new Vector(0, 0, 0.25f);
-        Vector rightShoulder = new Vector(-0.25f, 0, 0.2f);
-        Vector leftShoulder = new Vector(0.25f, 0, 0.2f);
-        Vector rightHip = new Vector(-0.15f, 0, -0.25f);
-        Vector leftHip = new Vector(0.15f, 0, -0.25f);
+        Vector rightShoulder = new Vector(0.3f, 0, 0.2f);
+        Vector leftShoulder = new Vector(-0.3f, 0, 0.2f);
+        Vector rightHip = new Vector(0.15f, 0, -0.25f);
+        Vector leftHip = new Vector(-0.15f, 0, -0.25f);
 
         Vector torsoTrans = new Vector(0, 0, 0.75f);
 
-        Vector upperToLowerArm = new Vector(0, 0, -0.35);
+        Vector upperToLowerArm = new Vector(0, 0, -0.3);
         Vector lowerToHand = new Vector(0, 0, -0.25);
 
-        Vector upperToLowerLeg = new Vector(0, 0, -0.35);
+        Vector upperToLowerLeg = new Vector(0, 0, -0.25);
         Vector lowerToFoot = new Vector(0, 0, -0.25);
 
         /** The material from which this robot is built. */
@@ -403,6 +405,10 @@ public class RobotRace extends Base {
             gl.glVertex3d(p2.x(), p2.y(), p2.z());
             gl.glEnd();
         }
+
+        private void translate(Vector tr) {
+            gl.glTranslated(tr.x(), tr.y(), tr.z());
+        }
         /**
          * Constructs the robot with initial parameters.
          */
@@ -415,6 +421,7 @@ public class RobotRace extends Base {
 
         private void drawHead() {
             if (gs.showStick) {
+                gl.glColor3f(0, 0, 0);
                 gl.glTranslated(0, 0, 0.4d);
                 glut.glutSolidSphere(stickSphereRad, 10, 10);
 
@@ -429,47 +436,379 @@ public class RobotRace extends Base {
         }
 
         private void drawArm() {
+            double armRadius = 0.05;
+
             if (gs.showStick) {
+                gl.glColor3f(0, 0, 0);
                 drawSphere(stickSphereRad, upperToLowerArm);
                 drawLine(Vector.O, upperToLowerArm);
+            }{
+//            } else {
+                gl.glColor3f(0.1f, 0.1f, 0.1f);
+                gl.glTranslated(0, 0, -1 * upperToLowerArm.length());
+                glut.glutSolidSphere(0.055, 10, 10);
+                gl.glColor3f(0.7f, 0.7f, 0.7f);
+                glut.glutSolidCylinder(armRadius, upperToLowerArm.length(), 10, 10);
+                gl.glTranslated(0, 0, upperToLowerArm.length());
             }
             gl.glTranslated(upperToLowerArm.x(), upperToLowerArm.y(), upperToLowerArm.z());
-            gl.glRotated(-10, 0, 1, 0);
+            gl.glRotated(20, 1, 1, 0);
             drawLowerArm();
-            gl.glRotated(10, 0, 1, 0);
+            gl.glRotated(-20, 1, 1, 0);
             gl.glTranslated(-upperToLowerArm.x(), -upperToLowerArm.y(), -upperToLowerArm.z());
         }
 
         private void drawLowerArm() {
+            Vector topCirclePos = new Vector(0.02, 0, 0.2);
+            double topCircleRadius = 0.1;
+
+            Vector hexPartPos = new Vector(0, 0, 0.25);
+            double hexPartRadius = 0.05;
+
+            Vector bottomCirclePos = new Vector(0, 0, 0);
+            double bottomCircleRadius = 0.075;
+
             if (gs.showStick) {
+                gl.glColor3f(0, 0, 0);
                 drawSphere(stickSphereRad, lowerToHand);
                 drawLine(Vector.O, lowerToHand);
+            }{
+//            } else {
+                translate(lowerToHand);
+
+                gl.glColor3f(0.2f, 0.2f, 0.2f);
+
+                // draw top of "cut-off" cone
+                gl.glBegin(gl.GL_TRIANGLE_FAN);
+                gl.glVertex3d(topCirclePos.x(), topCirclePos.y(), topCirclePos.z());
+
+                for (int i = 0; i <= 360; i++) {
+                    double angle = Math.toRadians(i);
+
+                    gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
+                                  topCircleRadius * Math.sin(angle) + topCirclePos.y(),
+                                  topCirclePos.z());
+                }
+                gl.glEnd();
+
+                // draw bottom of "cut-off" cone
+                gl.glBegin(gl.GL_TRIANGLE_FAN);
+                gl.glVertex3d(bottomCirclePos.x(), bottomCirclePos.y(), bottomCirclePos.z());
+
+                for (int i = 0; i <= 360; i++) {
+                    double angle = Math.toRadians(i);
+
+                    gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
+                                  bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
+                                  bottomCirclePos.z());
+                }
+                gl.glEnd();
+
+                // draw "cut-off" cone formed by the two circles
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+
+                for (int i = 0; i <= 360; i++) {
+                    double angle = Math.toRadians(i);
+
+                    gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
+                                  bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
+                                  bottomCirclePos.z());
+                    gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
+                                  topCircleRadius * Math.sin(angle) + topCirclePos.y(),
+                                  topCirclePos.z());
+                }
+
+                gl.glEnd();
+
+                gl.glColor3f(0.1f, 0.1f, 0.1f);
+
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+
+                for (int i = 0; i <= 360; i += 60) {
+                    double angle = Math.toRadians(i);
+
+                    gl.glVertex3d(hexPartRadius * Math.cos(angle) + hexPartPos.x(),
+                            hexPartRadius * Math.sin(angle) + hexPartPos.y(),
+                            hexPartPos.z());
+                    gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
+                            topCircleRadius * Math.sin(angle) + topCirclePos.y(),
+                            topCirclePos.z());
+                }
+
+                gl.glEnd();
             }
+
+            drawHand();
+        }
+
+        private void drawHand() {
+            double diskHeight = 0.05;
+            double diskRadius = 0.05;
+
+            gl.glPushMatrix();
+
+            gl.glColor3f(0.55f, 0.55f, 0.55f);
+
+            gl.glTranslated(0, 0, -diskHeight);
+            glut.glutSolidCylinder(diskRadius, diskHeight, 24, 24);
+
+            gl.glTranslated(-diskRadius + 0.005, 0, -0.1 * diskHeight);
+
+            drawClaw();
+
+            gl.glTranslated(2 * diskRadius - 0.01, 0, 0);
+
+            gl.glScaled(-1, 1, 1);
+
+            drawClaw();
+
+            gl.glPopMatrix();
+        }
+
+        private void drawClaw() {
+            double depth = 0.025;
+            double[] angles = { 40, 15, 15, 30, 40 };
+            double[] radii = { 0.025, 0.075, 0.05, 0.15, 0.2 };
+            double width = 0.05;
+
+            gl.glPushMatrix();
+            gl.glColor3f(0.3f, 0.3f, 0.3f);
+
+            gl.glRotated(-90, 0 ,1, 0);
+            gl.glScaled(0.6, 0.6, 0.6);
+
+            // Translate to position the claw centred above the origin.
+            gl.glTranslated(-0.5 * radii[0], 0, 0);
+            for (int angle_idx = 0; angle_idx < angles.length; angle_idx++) {
+                double[][] vertices = new double[4][2];
+
+                if (angle_idx != 0) {
+                    gl.glRotated(-angles[angle_idx - 1], 0, 1, 0);
+                    gl.glTranslated(radii[angle_idx - 1] - radii[angle_idx], 0, 0);
+                }
+
+                gl.glBegin(gl.GL_QUADS);
+
+                for (int i = 0; i < angles[angle_idx]; i += 2) {
+                    vertices[0][0] = radii[angle_idx] * Math.cos(Math.toRadians(i));
+                    vertices[0][1] = radii[angle_idx] * Math.sin(Math.toRadians(i));
+                    vertices[1][0] = (radii[angle_idx] + width) * Math.cos(Math.toRadians(i));
+                    vertices[1][1] = (radii[angle_idx] + width) * Math.sin(Math.toRadians(i));
+                    vertices[2][0] = radii[angle_idx] * Math.cos(Math.toRadians(i + 2));
+                    vertices[2][1] = radii[angle_idx] * Math.sin(Math.toRadians(i + 2));
+                    vertices[3][0] = (radii[angle_idx] + width) * Math.cos(Math.toRadians(i + 2));
+                    vertices[3][1] = (radii[angle_idx] + width) * Math.sin(Math.toRadians(i + 2));
+
+                    // front face
+                    gl.glVertex3d(vertices[0][0], depth, vertices[0][1]);
+                    gl.glVertex3d(vertices[1][0], depth, vertices[1][1]);
+                    gl.glVertex3d(vertices[3][0], depth, vertices[3][1]);
+                    gl.glVertex3d(vertices[2][0], depth, vertices[2][1]);
+                    // back face
+                    gl.glVertex3d(vertices[0][0], -depth, vertices[0][1]);
+                    gl.glVertex3d(vertices[1][0], -depth, vertices[1][1]);
+                    gl.glVertex3d(vertices[3][0], -depth, vertices[3][1]);
+                    gl.glVertex3d(vertices[2][0], -depth, vertices[2][1]);
+                    // side
+                    gl.glVertex3d(vertices[0][0], depth, vertices[0][1]);
+                    gl.glVertex3d(vertices[1][0], -depth, vertices[0][1]);
+                    gl.glVertex3d(vertices[2][0], -depth, vertices[2][1]);
+                    gl.glVertex3d(vertices[2][0], depth, vertices[2][1]);
+
+                    gl.glVertex3d(vertices[1][0], depth, vertices[1][1]);
+                    gl.glVertex3d(vertices[1][0], -depth, vertices[1][1]);
+                    gl.glVertex3d(vertices[3][0], -depth, vertices[3][1]);
+                    gl.glVertex3d(vertices[3][0], depth, vertices[3][1]);
+                }
+
+                gl.glEnd();
+            }
+
+//            for (int i = 0; i < 20; i += 2) {
+//                vertices[i][0] = 0.2 * Math.cos(Math.toRadians(i));
+//                vertices[i][1] = 0.2 * Math.sin(Math.toRadians(i));
+//                vertices[i + 1][0] = 0.25 * Math.cos(Math.toRadians(i));
+//                vertices[i + 1][1] = 0.25 * Math.sin(Math.toRadians(i));
+//            }
+//
+//            for (int i = 0; i < 48; i += 2) {
+//                vertices[i + 20][0] = 0.1 * Math.cos(Math.toRadians(i));
+//                vertices[i + 20][1] = 0.1 * Math.sin(Math.toRadians(i));
+//                vertices[i + 21][0] = 0.15 * Math.cos(Math.toRadians(i));
+//                vertices[i + 21][1] = 0.15 * Math.sin(Math.toRadians(i));
+//            }
+//
+//            for (int i = 0; i < 48; i += 2) {
+//                vertices[i + 68][0] = 0.25 * Math.cos(Math.toRadians(i));
+//                vertices[i + 68][1] = 0.25 * Math.sin(Math.toRadians(i));
+//                vertices[i + 69][0] = 0.3 * Math.cos(Math.toRadians(i));
+//                vertices[i + 69][1] = 0.3 * Math.sin(Math.toRadians(i));
+//            }
+//
+//            gl.glPushMatrix();
+//            gl.glColor3f(0.3f, 0.3f, 0.3f);
+//
+//            gl.glRotated(-90, 0 ,1, 0);
+//            gl.glScaled(0.6, 0.6, 0.6);
+//
+//            // Translate to position the claw centred above the origin.
+//            gl.glTranslated(-0.225, 0, 0);
+//
+//
+//            gl.glBegin(gl.GL_QUADS);
+//
+//            for (int i = 0; i < 18; i += 2) {
+//                // front face
+//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
+//                // back face
+//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
+//                // side
+//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
+//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
+//
+//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
+//            }
+//            gl.glEnd();
+//
+//            gl.glRotated(-18, 0, 1, 0);
+//            gl.glTranslated(0.1, 0, 0);
+//
+//            gl.glBegin(gl.GL_QUADS);
+//            for (int i = 20; i < 66; i += 2) {
+//                // front face
+//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
+//                // back face
+//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
+//                // sides
+//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
+//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
+//
+//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
+//            }
+//            gl.glEnd();
+//
+//            // Rotate the angle of the previous segment and translate the difference in radius
+//            gl.glRotated(-46, 0, 1, 0);
+//            gl.glTranslated(-0.15, 0, 0);
+//
+//            gl.glBegin(gl.GL_QUADS);
+//            for (int i = 68; i < 114; i += 2) {
+//                // front face
+//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
+//                // back face
+//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
+//                // side
+//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
+//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
+//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
+//
+//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
+//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
+//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
+//            }
+//            // close off claw
+//            gl.glVertex3d(vertices[114][0], depth, vertices[114][1]);
+//            gl.glVertex3d(vertices[114][0], -depth, vertices[114][1]);
+//            gl.glVertex3d(vertices[115][0], -depth, vertices[115][1]);
+//            gl.glVertex3d(vertices[115][0], depth, vertices[115][1]);
+//
+//
+//            gl.glEnd();
+
+            gl.glPopMatrix();
+
         }
 
         private void drawLeg() {
             if (gs.showStick) {
+                gl.glColor3f(0, 0, 0);
                 drawSphere(stickSphereRad, upperToLowerLeg);
                 drawLine(Vector.O, upperToLowerLeg);
             }
             gl.glTranslated(upperToLowerLeg.x(), upperToLowerLeg.y(), upperToLowerLeg.z());
-            gl.glRotated(-10, 0, 1, 0);
+//            gl.glRotated(-10, 0, 1, 0);
             drawLowerLeg();
-            gl.glRotated(10, 0, 1, 0);
+//            gl.glRotated(10, 0, 1, 0);
             gl.glTranslated(-upperToLowerLeg.x(), -upperToLowerLeg.y(), -upperToLowerLeg.z());
         }
 
         private void drawLowerLeg() {
             if (gs.showStick) {
+                gl.glColor3f(0, 0, 0);
                 drawSphere(stickSphereRad, lowerToFoot);
                 drawLine(Vector.O, lowerToFoot);
             }
         }
 
+        private void drawShoulder() {
+//            if (!gs.showStick) {
+            {
+                gl.glBegin(gl.GL_TRIANGLES);
+                // front face
+                gl.glVertex3d(-0.05, 0.075, 0.05);
+                gl.glVertex3d(0.1, 0.075, 0.05);
+                gl.glVertex3d(-0.05, 0.075, -0.1);
+
+                // back face
+                gl.glVertex3d(-0.05, -0.075, 0.05);
+                gl.glVertex3d(0.1, -0.075, 0.05);
+                gl.glVertex3d(-0.05, -0.075, -0.1);
+                gl.glEnd();
+
+                gl.glBegin(gl.GL_QUADS);
+                // top face
+                gl.glVertex3d(-0.05, -0.075, 0.05);
+                gl.glVertex3d(0.1, -0.075, 0.05);
+                gl.glVertex3d(0.1, 0.075, 0.05);
+                gl.glVertex3d(-0.05, 0.075, 0.05);
+                // face connected to arm
+                gl.glVertex3d(0.1, -0.075, 0.05);
+                gl.glVertex3d(0.1, 0.075, 0.05);
+                gl.glVertex3d(-0.05, 0.075, -0.1);
+                gl.glVertex3d(-0.05, -0.075, -0.1);
+                gl.glEnd();
+
+            }
+        }
+
         private void drawTorso() {
             Vector centerBottom = new Vector(0, 0, -0.25f);
+            double depth = 0.35;
+            double spaceToShoulderJoint = 0.05;
+
 
             if (gs.showStick) {
+                gl.glColor3f(0, 0, 0);
                 drawSphere(stickSphereRad, neck);
                 drawSphere(stickSphereRad, rightShoulder);
                 drawSphere(stickSphereRad, leftShoulder);
@@ -480,6 +819,46 @@ public class RobotRace extends Base {
                 drawLine(neck, leftShoulder);
                 drawLine(neck, centerBottom);
                 drawLine(rightHip, leftHip);
+            }{
+//            } else {
+                gl.glColor3f(0.5f, 0.5f, 0.5f);
+                gl.glPushMatrix();
+
+                translate(rightShoulder);
+                drawShoulder();
+                translate(rightShoulder.scale(-1));
+
+                translate(leftShoulder);
+                gl.glScaled(-1, 1, 1);
+                drawShoulder();
+                gl.glScaled(-1, 1, 1);
+                translate(leftShoulder.scale(-1));
+
+                gl.glPushMatrix();
+                gl.glScaled(Math.abs(rightShoulder.x()) + Math.abs(leftShoulder.x()) - spaceToShoulderJoint,
+                                     depth,
+                                     Math.abs(rightHip.z()) + neck.z());
+                glut.glutSolidCube(1);
+                gl.glPopMatrix();
+
+                gl.glColor3f(0.3f, 0.3f, 0.3f);
+
+                // Place a "screen" on the front face
+                gl.glPushMatrix();
+                gl.glTranslated(0, 0.18, 0.05);
+                gl.glScaled((Math.abs(rightShoulder.x()) + Math.abs(leftShoulder.x()) - spaceToShoulderJoint) * 0.75,
+                            0.02,
+                            (Math.abs(rightHip.z()) + neck.z()) * 0.5);
+                glut.glutSolidCube(1);
+                gl.glPopMatrix();
+
+                // Place a nob on the front face
+                gl.glTranslated(0.18, 0.17, -0.18);
+                gl.glRotated(-90, 1, 0, 0);
+                glut.glutSolidCylinder(0.02, 0.01, 10, 10);
+
+                gl.glPopMatrix();
+
             }
         }
 
@@ -501,25 +880,25 @@ public class RobotRace extends Base {
 
             gl.glPushMatrix();
             gl.glTranslated(rightShoulder.x(), rightShoulder.y(), rightShoulder.z());
-            gl.glRotated(20, 0, 1, 0);
+            gl.glRotated(-20, 0, 1, 0);
             drawArm();
             gl.glPopMatrix();
             gl.glPushMatrix();
             gl.glScaled(-1, 1, 1);
             gl.glTranslated(rightShoulder.x(), rightShoulder.y(), rightShoulder.z());
-            gl.glRotated(20, 0, 1, 0);
+            gl.glRotated(-20, 0, 1, 0);
             drawArm();
             gl.glPopMatrix();
 
             gl.glPushMatrix();
             gl.glTranslated(rightHip.x(), rightHip.y(), rightHip.z());
-            gl.glRotated(20, 0, 1, 0);
+//            gl.glRotated(20, 0, 1, 0);/
             drawLeg();
             gl.glPopMatrix();
             gl.glPushMatrix();
             gl.glScaled(-1, 1, 1);
             gl.glTranslated(rightHip.x(), rightHip.y(), rightHip.z());
-            gl.glRotated(20, 0, 1, 0);
+//            gl.glRotated(20, 0, 1, 0);
             drawLeg();
             gl.glPopMatrix();
 
