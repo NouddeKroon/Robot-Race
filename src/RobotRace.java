@@ -1534,6 +1534,9 @@ public class RobotRace extends Base {
      * Implementation of a race track that is made from Bezier segments.
      */
     private class RaceTrack {
+        double cosRadius = 10;
+        double sinRadius = 14;
+        double trackWidth = 4;
         
         /** Array with control points for the O-track. */
         private Vector[] controlPointsOTrack;
@@ -1553,7 +1556,45 @@ public class RobotRace extends Base {
         public RaceTrack() {
             // code goes here ...
         }
-        
+
+        void drawSimpleTop(boolean normalUp) {
+            final double dt = 0.01;
+            final double dw = 0.25;
+            final double widthFromCenter = 0.5 * trackWidth;
+
+            // normal along Z
+            gl.glNormal3d(0, 0, normalUp ? 1 : -1);
+
+            Vector center = getPoint(0);
+            Vector prevToOrigin = Vector.Z.cross(getTangent(0)).normalized();
+            Vector prevInnerMost = center.add(prevToOrigin.scale(widthFromCenter));
+            for (double t = dt; t <= 1.0d + dt; t += dt) {
+                center = getPoint(t);
+                Vector toOrigin = Vector.Z.cross(getTangent(t)).normalized();
+                Vector innerMostPoint = center.add(toOrigin.scale(widthFromCenter));
+
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                for (double w = 0; w <= 1.0d; w += dw) {
+                    Vector innerPoint0 = prevInnerMost.add(prevToOrigin.scale(-trackWidth * w));
+//                    Vector outerPoint0 = innerPoint0.add(toOrigin.scale(-dw));
+                    Vector innerPoint1 = innerMostPoint.add(toOrigin.scale(-trackWidth * w));
+//                    Vector outerPoint1 = innerPoint1.add(toOrigin.scale(-dw));
+
+                    gl.glVertex3d(innerPoint0.x(), innerPoint0.y(), innerPoint0.z());
+//                    gl.glVertex3d(outerPoint0.x(), outerPoint0.y(), outerPoint0.z());
+
+                    gl.glVertex3d(innerPoint1.x(), innerPoint1.y(), innerPoint1.z());
+//                    gl.glVertex3d(outerPoint1.x(), outerPoint1.y(), outerPoint1.z());
+
+                }
+
+                gl.glEnd();
+
+                prevInnerMost = innerMostPoint;
+                prevToOrigin = toOrigin;
+            }
+        }
+
         /**
          * Draws this track, based on the selected track number.
          */
@@ -1561,6 +1602,10 @@ public class RobotRace extends Base {
             
             // The test track is selected
             if (0 == trackNr) {
+                gl.glTranslated(0, 0, 1);
+                drawSimpleTop(true);
+                gl.glTranslated(0, 0, -2);
+                drawSimpleTop(false);
                 // code goes here ...
             
             // The O-track is selected
@@ -1586,14 +1631,20 @@ public class RobotRace extends Base {
          * Returns the position of the curve at 0 <= {@code t} <= 1.
          */
         public Vector getPoint(double t) {
-            return Vector.O; // <- code goes here
+            double x = cosRadius * Math.cos(Math.PI * 2 * t);
+            double y = sinRadius * Math.sin(Math.PI * 2 * t);
+
+            return new Vector(x, y, 1); // <- code goes here
         }
         
         /**
          * Returns the tangent of the curve at 0 <= {@code t} <= 1.
          */
         public Vector getTangent(double t) {
-            return Vector.O; // <- code goes here
+            double x = -2 * Math.PI * cosRadius * Math.sin(2 * Math.PI * t);
+            double y = 2 * Math.PI * sinRadius * Math.cos(2 * Math.PI * t);
+
+            return new Vector(x, y, 0);
         }
         
     }
