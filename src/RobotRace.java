@@ -1,11 +1,14 @@
+/**
+ * Computer Graphics - 2IV60 - Assignment 1
+ *
+ * Authors:
+ * Rolf Morel
+ * Noud de Kroon
+ */
 
-import javax.media.opengl.GL;
 import static javax.media.opengl.GL2.*;
 import robotrace.Base;
-import robotrace.Texture1D;
 import robotrace.Vector;
-
-import java.nio.FloatBuffer;
 
 /**
  * Handles all of the RobotRace graphics functionality,
@@ -130,6 +133,10 @@ public class RobotRace extends Base {
         // Enable depth testing.
         gl.glEnable(GL_DEPTH_TEST);
         gl.glDepthFunc(GL_LESS);
+
+        // Enable lighting and light0
+        gl.glEnable(GL_LIGHTING);
+        gl.glEnable(GL_LIGHT0);
 		
 	    // Normalize normals.
         gl.glEnable(GL_NORMALIZE);
@@ -162,16 +169,34 @@ public class RobotRace extends Base {
         gl.glMatrixMode(GL_PROJECTION);
         gl.glLoadIdentity();
 
-        // Set the perspective.
-        // Modify this to meet the requirements in the assignment.
-        //System.out.println(gs.vWidth + " " + gs.vDist + " " + gs.phi + " " + gs.theta);
+        /*
+         * Set the perspective:
+         * Since the field of view angle must be such that the gs.vWidth vector fills the screen, we can calculate the
+         * angle of the field of view using arc-tangent and the distance to the centre point.
+        */
+
         double fovAngle = Math.toDegrees(2 * Math.atan(gs.vWidth / (2 * gs.vDist)));
-        glu.gluPerspective(60, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
-//        glu.gluPerspective(fovAngle, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
-        
+        glu.gluPerspective(fovAngle, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
+
         // Set camera.
         gl.glMatrixMode(GL_MODELVIEW);
         gl.glLoadIdentity();
+
+        {
+            // Set basic light properties of light 0
+            final float[] AMBIENT = {0.1f, 0.1f, 0.1f, 1.0f};
+            final float[] DIFFUSE = {1.0f, 1.0f, 1.0f, 1.0f};
+            final float[] SPECULAR = {1.0f, 1.0f, 1.0f, 1.0f};
+            // By positioning the light, relative to origin on the initial MODELVIEW matrix,
+            // before the camera is positioned, the light will is positioned relative to the camera.
+            // The positional light is set slightly to the left and slightly up (relative to the camera).
+            final float[] POSITION = {-0.5f, 0.0f, 0.5f, 1.0f};
+
+            gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT, AMBIENT, 0);
+            gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE, DIFFUSE, 0);
+            gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR, SPECULAR, 0);
+            gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, POSITION, 0);
+        }
                
         // Update the view according to the camera mode
         camera.update(gs.camMode);
@@ -187,7 +212,7 @@ public class RobotRace extends Base {
     public void drawScene() {
         // Background color.
         gl.glClearColor(1f, 1f, 1f, 0f);
-        
+
         // Clear background.
         gl.glClear(GL_COLOR_BUFFER_BIT);
         
@@ -208,115 +233,87 @@ public class RobotRace extends Base {
 
         // Draw the first robot
         robots[0].draw();
-        
+
+        // Draw the a another three robots
+        gl.glTranslated(1.5f, 0, 0);
+        robots[1].draw();
+
+        gl.glTranslated(1.5f, 0, 0);
+        robots[2].draw();
+
+        gl.glTranslated(1.5f, 0, 0);
+        robots[3].draw();
+
         // Draw race track
         raceTrack.draw(gs.trackNr);
         
         // Draw terrain
         terrain.draw();
-
-        // Unit box around origin.
-        glut.glutWireCube(1f);
-
-        // Move in x-direction.
-        gl.glTranslatef(2f, 0f, 0f);
-        
-        // Rotate 30 degrees, around z-axis.
-        gl.glRotatef(30f, 0f, 0f, 1f);
-        
-        // Scale in z-direction.
-        gl.glScalef(1f, 1f, 2f);
-
-        // Translated, rotated, scaled box.
-        glut.glutWireCube(1f);
-
     }
-    
-    
+
+    // Implement drawing a orthonormal axes system with an origin and unit length arrows along the x-, y-, and z-axes.
+    // Each of the arrows has its own color as has the origin.
+    private class AxisSystem {
+        private final double CONE_HEIGHT = 0.1f;
+        private final double CONE_RADIUS = 0.1f;
+        private final double BEAM_WIDTH = 0.05f;
+        private final double BEAM_HEIGHT = 1 - CONE_HEIGHT;
+        private final double ORIGIN_RADIUS = 0.075f;
+
+        // Draw a simple sphere round the origin
+        void drawOrigin() {
+            gl.glColor3f(1.0f, 1.0f, 0.0f); // The origin is colored yellow.
+
+            glut.glutSolidSphere(ORIGIN_RADIUS, 32, 32);
+        }
+
+        // Draw a arrow of unit (1 m) length along the z-axis
+        void drawAxis() {
+            gl.glPushMatrix();
+            // translate the arrow from the arrow head lying on top the origin to the bottom of the arrow resting on the origin
+            gl.glTranslated(0, 0, BEAM_HEIGHT);
+
+            // create a beam hanging down from the origin
+            gl.glTranslated(0, 0, -0.5 * BEAM_HEIGHT);
+            gl.glScaled(BEAM_WIDTH, BEAM_WIDTH, BEAM_HEIGHT);
+            glut.glutSolidCube(1.0f);
+            gl.glScaled(1 / BEAM_WIDTH, 1 / BEAM_WIDTH, 1 / BEAM_HEIGHT);
+            gl.glTranslated(0, 0, 0.5 * BEAM_HEIGHT);
+
+            // draw the cone which is the arrow's "head"
+            glut.glutSolidCone(CONE_RADIUS, CONE_HEIGHT, 64, 64);
+            gl.glPopMatrix();
+        }
+
+        // draw the complete axis-system
+        public void draw() {
+            // Draw a unit length arrow along the z-axis. The z-axis arrow is blue.
+            gl.glColor3f(0, 0, 1.0f);
+            drawAxis();
+
+            // The x-axis arrow is colored red and is rotated 90 degrees along y-axis (relative to z-axis)
+            gl.glColor3f(1.0f, 0, 0);
+            gl.glRotated(90, 0, 1, 0);
+            drawAxis();
+            gl.glRotated(-90, 0, 1, 0);
+
+            // The y-axis arrow is colored green and is rotated -90 degrees along x-axis
+            gl.glColor3f(0, 1.0f, 0);
+            gl.glRotated(-90, 1, 0, 0);
+            drawAxis();
+            gl.glRotated(90, 1, 0, 0);
+
+            drawOrigin();
+        }
+    }
+
     /**
      * Draws the x-axis (red), y-axis (green), z-axis (blue),
      * and origin (yellow).
      */
-
-    private enum Axis3D {
-        X_AXIS,
-        Y_AXIS,
-        Z_AXIS;
-    }
-
-    private class Axis {
-        private Vector color;
-        private Vector trans;
-        private Vector scale;
-        private Vector coneRotate;
-        private double angle;
-
-        public Axis(Axis3D axis) {
-            switch (axis) {
-                case X_AXIS:
-                    color = new Vector(1.0f, 0f, 0f);
-                    trans = new Vector(0.5f, 0f, 0f);
-                    scale = new Vector(1.0f, 0.1f, 0.1f);
-                    coneRotate = new Vector(0f, 1.0f, 0f);
-                    angle = 90;
-                    break;
-                case Y_AXIS:
-                    color = new Vector(0f, 1.0f, 0f);
-                    trans = new Vector(0f, 0.5f, 0f);
-                    scale = new Vector(0.1f, 1.0f, 0.1f);
-                    coneRotate = new Vector(1.0f, 0f, 0f);
-                    angle = -90;
-                    break;
-                case Z_AXIS:
-                    color = new Vector(0f, 0f, 1.0f);
-                    trans = new Vector(0f, 0f, 0.5f);
-                    scale = new Vector(0.1f, 0.1f, 1.0f);
-                    coneRotate = new Vector(0f, 0f, 0f);
-                    angle = 90;
-                    break;
-            }
-        }
-
-        public void draw() {
-            gl.glPushMatrix();
-            gl.glColor3d(color.x(), color.y(), color.z());
-
-            gl.glTranslated(trans.x(), trans.y(), trans.z());
-
-            gl.glPushMatrix();
-            gl.glScaled(scale.x(), scale.y(), scale.z());
-            glut.glutSolidCube(1.0f);
-            gl.glPopMatrix();
-
-            gl.glTranslated(trans.x(), trans.y(), trans.z());
-            gl.glRotated(angle, coneRotate.x(), coneRotate.y(), coneRotate.z());
-            glut.glutSolidCone(0.2d, 0.2d, 64, 64);
-            gl.glPopMatrix();
-        }
-    }
-
-    private class Origin {
-        private final float[] COLOR = { 1.0f, 1.0f, 0.0f };
-        private final double RADIUS = 0.2f;
-
-        public void draw() {
-            gl.glPushMatrix();
-            gl.glColor3f(COLOR[0], COLOR[1], COLOR[2]);
-
-            glut.glutSolidSphere(RADIUS, 10, 10);
-
-            gl.glPopMatrix();
-        }
-    }
-
     public void drawAxisFrame() {
-        // Draw the 3 autonormal axis, each normalized and with their own color.
-        new Axis(Axis3D.X_AXIS).draw();
-        new Axis(Axis3D.Y_AXIS).draw();
-        new Axis(Axis3D.Z_AXIS).draw();
-
-        // Draw yellow sphere centred at origin.
-        new Origin().draw();
+        // Draw the 3 orthonormal axes, each the length of 1 unit (meter) and with their respective colors and a yellow origin.
+        new AxisSystem().draw();
     }
     
     /**
@@ -329,160 +326,391 @@ public class RobotRace extends Base {
          * Modify the default values to make it look like gold.
          */
         GOLD (
-            new float[] {0.8f, 0.8f, 0.8f, 1.0f},
-            new float[] {0.0f, 0.0f, 0.0f, 1.0f}),
+            new float[] {0.76f, 0.61f, 0.23f, 1.0f},
+            new float[] {0.63f, 0.56f, 0.37f, 1.0f},
+            new float[] {0.25f, 0.20f, 0.07f, 1.0f},
+            51.2f),
         
         /**
          * Silver material properties.
          * Modify the default values to make it look like silver.
          */
         SILVER (
-            new float[] {0.8f, 0.8f, 0.8f, 1.0f},
-            new float[] {0.0f, 0.0f, 0.0f, 1.0f}),
+            new float[] {0.51f, 0.51f, 0.51f, 1.0f},
+            new float[] {0.51f, 0.51f, 0.51f, 1.0f},
+            new float[] {0.19f, 0.19f, 0.19f, 1.0f},
+            51.2f),
         
         /** 
          * Wood material properties.
          * Modify the default values to make it look like wood.
          */
         WOOD (
-            new float[] {0.8f, 0.8f, 0.8f, 1.0f},
-            new float[] {0.0f, 0.0f, 0.0f, 1.0f}),
-        
+            new float[] {0.25f, 0.25f, 0.25f, 1f},
+            new float[] {0.01f, 0.01f, 0.01f, 1.0f},
+            new float[] {0.19f, 0.19f, 0.19f, 1.0f},
+            0f),
+
         /**
          * Orange material properties.
          * Modify the default values to make it look like orange.
          */
         ORANGE (
-            new float[] {0.8f, 0.8f, 0.8f, 1.0f},
-            new float[] {0.0f, 0.0f, 0.0f, 1.0f});
+            new float[] {0.01f, 0.01f, 0.01f, 1f},
+            new float[] {0.5f, 0.5f, 0.5f, 1.0f},
+            new float[] {0.1f, 0.1f, 0.1f, 1.0f},
+            32f);
         
         /** The diffuse RGBA reflectance of the material. */
         float[] diffuse;
         
         /** The specular RGBA reflectance of the material. */
         float[] specular;
-        
+
+        /** The ambient RGBA reflectance of the material. */
+        float[] ambient;
+
+        /** The shininess RGBA reflectance of the material. */
+        float shininess;
         /**
          * Constructs a new material with diffuse and specular properties.
          */
-        private Material(float[] diffuse, float[] specular) {
+        private Material(float[] diffuse, float[] specular, float[] ambient, float shininess) {
             this.diffuse = diffuse;
             this.specular = specular;
+            this.ambient = ambient;
+            this.shininess = shininess;
         }
     }
-    
+
+    // Convenience method to draw a sphere at the position specified by POS
+    private void drawSphere(double diameter, Vector pos) {
+        gl.glTranslated(pos.x(), pos.y(), pos.z());
+        glut.glutSolidSphere(diameter, 10, 10);
+        gl.glTranslated(-pos.x(), -pos.y(), -pos.z());
+    }
+
+    // convenience method to draw a line between two specified vectors
+    private void drawLine(Vector p1, Vector p2) {
+        gl.glBegin(gl.GL_LINES);
+        gl.glVertex3d(p1.x(), p1.y(), p1.z());
+        gl.glVertex3d(p2.x(), p2.y(), p2.z());
+        gl.glEnd();
+    }
+
+    // convenience method to translate to the position of tr vector
+    private void translate(Vector tr) {
+        gl.glTranslated(tr.x(), tr.y(), tr.z());
+    }
+
+    // Method to calculate and set the normal for a face defined by 3 vertices
+    private void makeFaceVertex3(double v1x, double v1y, double v1z,
+                                 double v2x, double v2y, double v2z,
+                                 double v3x, double v3y, double v3z) {
+        // Calculate first vector
+        double vec1x = v2x - v1x;
+        double vec1y = v2y - v1y;
+        double vec1z = v2z - v1z;
+
+        // Calc second vector
+        double vec2x = v3x - v1x;
+        double vec2y = v3y - v1y;
+        double vec2z = v3z - v1z;
+
+        // Take cross product of the two vectors to get the normal of the face
+        // because GL_NORMALIZE is enabled we do not need to normalize the normal vector
+        double normalX = vec1y * vec2z - vec1z * vec2y;
+        double normalY = vec1z * vec2x - vec1x * vec2z;
+        double normalZ = vec1x * vec2y - vec1y * vec2x;
+
+        gl.glNormal3d(normalX, normalY, normalZ);
+
+        gl.glVertex3d(v1x, v1y, v1z);
+        gl.glVertex3d(v2x, v2y, v2z);
+        gl.glVertex3d(v3x, v3y, v3z);
+    }
+
+    // Wrapper to set the normal for faces defined by 4 vertices
+    private void makeFaceVertex4(double v1x, double v1y, double v1z,
+                                 double v2x, double v2y, double v2z,
+                                 double v3x, double v3y, double v3z,
+                                 double v4x, double v4y, double v4z) {
+        makeFaceVertex3(v1x, v1y, v1z,
+                        v2x, v2y, v2z,
+                        v3x, v3y, v3z);
+
+        gl.glVertex3d(v4x, v4y, v4z);
+    }
+
     /**
      * Represents a Robot, to be implemented according to the Assignments.
      */
     private class Robot {
-        double stickSphereRad = 0.033f;
+        double stickSphereRadius = 0.033f;
+
+        // Translation for to position the center of the robot on top of the xy-plane
+        Vector torsoTrans = new Vector(0, 0, 0.75f);
+
+        // Coordinates for limbs relative to center of robot's torso
         Vector neck = new Vector(0, 0, 0.25f);
         Vector rightShoulder = new Vector(0.3f, 0, 0.2f);
         Vector leftShoulder = new Vector(-0.3f, 0, 0.2f);
         Vector rightHip = new Vector(0.15f, 0, -0.25f);
         Vector leftHip = new Vector(-0.15f, 0, -0.25f);
 
-        Vector torsoTrans = new Vector(0, 0, 0.75f);
+        // Coordinates for limbs relative to other limbs
+        Vector upperToLowerArm = new Vector(0, 0, -0.275);
+        Vector lowerArmToHand = new Vector(0, 0, -0.25);
 
-        Vector upperToLowerArm = new Vector(0, 0, -0.3);
-        Vector lowerToHand = new Vector(0, 0, -0.25);
+        Vector upperToLowerLeg = new Vector(0, 0, -0.19);
+        Vector lowerLegToFoot = new Vector(0, 0, -0.19);
 
-        Vector upperToLowerLeg = new Vector(0, 0, -0.25);
-        Vector lowerToFoot = new Vector(0, 0, -0.25);
+        // Angles between limbs
+        double lowerLegAngle = -25;
+        double upperLegAngle = 15;
+
+        float[] lowerArmRotate = { 20 , 1, 1, 0 };  // Rotation for glRotate. This used by drawArm to rotate the lower arm
+
+        //Head colors
+        float[] neckColor;
+        float[] headColor;
+        float[] scleraColor = {1,1,1};
+        float[] irisColor = {0,0,0};
+        float[] mouthColor = {0,0,0};
+        //Torso colors
+        float[] torsoColor;
+        float[] torsoScreenColor;
+        //Upper arm colors
+        float[] armColor;
+        float[] elbowColor;
+        //Lower arm colors
+        float[] lowerArmColor = { 0.2f, 0.2f, 0.2f };
+        float[] hexPartColor = { 0.1f, 0.1f, 0.1f };
+        //Hand colors
+        float[] handCylinderColor;
+        //Claw colors
+        float[] clawColor;
+        //Upper leg colors
+        float[] torsoJointColor;
+        float[] upperLegColor;
+        //Lower leg colors
+        float[] jointUpperLowerLegColor;
+        float[] lowerLegColor;
+        float[] footColor;
 
         /** The material from which this robot is built. */
         private final Material material;
 
-        private void drawSphere(double diameter, Vector pos) {
-            gl.glTranslated(pos.x(), pos.y(), pos.z());
-            glut.glutSolidSphere(diameter, 10, 10);
-            gl.glTranslated(-pos.x(), -pos.y(), -pos.z());
-        }
 
-        private void drawLine(Vector p1, Vector p2) {
-            gl.glBegin(gl.GL_LINES);
-            gl.glVertex3d(p1.x(), p1.y(), p1.z());
-            gl.glVertex3d(p2.x(), p2.y(), p2.z());
-            gl.glEnd();
-        }
-
-        private void translate(Vector tr) {
-            gl.glTranslated(tr.x(), tr.y(), tr.z());
-        }
         /**
          * Constructs the robot with initial parameters.
          */
-        public Robot(Material material
-            /* add other parameters that characterize this robot */) {
+        public Robot(Material material) {
             this.material = material;
-            
-            // code goes here ...
         }
 
+        //Method that draws head model. This method assumes that (0,0,0) coordinate is the joint connecting the head
+        //to the body. You can easily change the variables defined at the start of the method to reshape the head.
         private void drawHead() {
-            if (gs.showStick) {
-                gl.glColor3f(0, 0, 0);
-                gl.glTranslated(0, 0, 0.4d);
-                glut.glutSolidSphere(stickSphereRad, 10, 10);
+            double headWidth = 1.0;
+            double headHeight = 0.5;
+            double headDepth = 0.25;
+            double neckSize = 0.10;
+            double eyeRadius=0.12;
+            double eyeDepth = 0.02;
+            double irisDepth = 0.01;
+            double antennaSize = 0.1;
+            double neckAngle = 10;
 
-                gl.glTranslated(0, 0, -0.4d);
+            if (gs.showStick) {                                         //If gs.showStick is true, draw only stick-figure.
+                gl.glColor3f(0, 0, 0);                                  //Stick-figure is always black.
+                gl.glTranslated(0, 0, 0.5*neckSize+0.5*headHeight);     //Translate up, to about the centre of the head
+                glut.glutSolidSphere(stickSphereRadius, 10, 10);           //Draw a stickSphere-radius sphere
+                gl.glTranslated(0, 0, -(0.5*neckSize+0.5*headHeight));  //Translate back to the joint connecting neck and body
 
+                //Draw a line from the base of the head to the stick figure sphere in the centre of the head.
                 gl.glBegin(gl.GL_LINES);
-                gl.glVertex3f(0, 0, 0);
-                gl.glVertex3f(0, 0, 0.4f);
+                gl.glVertex3d(0, 0, 0);
+                gl.glVertex3d(0, 0, 0.5*neckSize+0.5*headHeight);
                 gl.glEnd();
 
+            } else {
+
+                //Draw the neck
+                gl.glColor3d(neckColor[0], neckColor[1], neckColor[2]);         //Set the color to the neck color.
+                gl.glPushMatrix();                                              //Push new matrix
+                gl.glRotated(-neckAngle, 1, 0, 0);                      //Rotate around x axis with appropiate angle
+                gl.glTranslated(0, 0, -0.05);           //Translate a bit downwards so entire cylinder is inside body
+                //Draw cylinder with appropiate size. We make it a bit bigger than necksize, so there is no open space.
+                glut.glutSolidCylinder(0.75*neckSize, 1.5 * neckSize, 30, 1);
+                gl.glPopMatrix();                                               //Restore to original matrix
+
+                /* Draw the head. The head is built from 6 quads, together forming a figure like a frustum. We use the
+                method makeFaceVertex4 to draw the quads, which automatically does the normal vectors, as long as we
+                make sure to define the vertices in a counterclockwise fashion (otherwise normal is inverted). */
+                gl.glColor3f(headColor[0], headColor[1], headColor[2]);         //Set color to color of head.
+                gl.glBegin(GL_QUADS);                                           //Start drawing quads.
+                //Draw front side of head
+                makeFaceVertex4(0.5 * headWidth, headDepth, 0.5 * neckSize,
+                        -0.5 * headWidth, headDepth, 0.5 * neckSize,
+                        -0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,
+                        0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight);
+                //Draw back side of head
+                makeFaceVertex4(0.3 * headWidth, -headDepth, neckSize,
+                        0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
+                        -0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
+                        -0.3 * headWidth, -headDepth, neckSize);
+
+
+                //Draw right side of head
+                makeFaceVertex4(0.5 * headWidth, headDepth, 0.5 * neckSize,
+                        0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,
+                        0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
+                        0.3 * headWidth, -headDepth, neckSize);
+
+                //Draw left side of head
+                makeFaceVertex4(-0.5 * headWidth, headDepth, 0.5 * neckSize,
+                        -0.3 * headWidth, -headDepth, neckSize,
+                        -0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
+                        -0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight);
+
+                //Draw top of head
+                makeFaceVertex4(0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,
+                        -0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,
+                        -0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
+                        0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight);
+
+                //draw bottom of head
+                makeFaceVertex4(0.5 * headWidth, headDepth, 0.5 * neckSize,
+                        0.3 * headWidth, -headDepth, neckSize,
+                        -0.3 * headWidth, -headDepth, neckSize,
+                        -0.5 * headWidth, headDepth, 0.5 * neckSize);
+
+                gl.glEnd();             //We are done drawing quads.
+
+                //Draw antenna.
+                gl.glPushMatrix();                  //Push a new matrix.
+                gl.glTranslated(-0.25*headWidth,-0.25*headDepth,neckSize+0.8*headHeight); //Translate to location of antenna.
+                glut.glutSolidCone(0.2*antennaSize,antennaSize,20,20);      //Draw a solidcone, using antennasize.
+                gl.glTranslated(0,0,antennaSize);                           //Translate to top of antenna.
+                glut.glutSolidSphere(0.2 * antennaSize, 20, 20);            //Draw a small sphere, relative to antennasize.
+                gl.glPopMatrix();                                           //Return to original matrix.
+
+                //Draw right eye
+                gl.glPushMatrix();                                              //Push a matrix to store current position.
+                gl.glColor3d(scleraColor[0], scleraColor[1], scleraColor[2]);   //Set color to sclera color.
+                gl.glTranslated(0.2 * headWidth, headDepth, 0.5 * neckSize + 0.6 * headHeight); //Translate to eye position.
+                gl.glRotated(-90, 1, 0, 0);                                     //Rotate around x axis.
+                glut.glutSolidCylinder(eyeRadius, eyeDepth, 100, 5);                //Draw the cylinder forming the sclera.
+                gl.glTranslated(-0.3 * eyeRadius, 0, eyeDepth);                     //Translate to surface of sclera.
+                gl.glColor3d(irisColor[0], irisColor[0], irisColor[0]);             //Set color to iriscolor.
+                glut.glutSolidCylinder(0.7 * eyeRadius, irisDepth, 100, 5);         //Draw the iris.
+                gl.glTranslated(0.3 * eyeRadius, 0, -eyeDepth);                     //Translate back to centre of eye.
+
+                //Draw left eye
+                gl.glColor3d(scleraColor[0], scleraColor[1], scleraColor[2]);   //Set color to sclera color.
+                gl.glTranslated(-0.4 * headWidth, 0, 0);                        //Translate to opposite side of head.
+                glut.glutSolidCylinder(eyeRadius, eyeDepth, 100, 5);            //Draw the cylinder forming the sclera.
+                gl.glColor3d(irisColor[0], irisColor[1], irisColor[2]);         //Set color to iris color.
+                gl.glTranslated(-0.3 * eyeRadius, 0, eyeDepth);                 //Translate to surface of sclera.
+                glut.glutSolidCylinder(0.7 * eyeRadius, irisDepth, 100, 5);     //Draw the iris.
+                gl.glPopMatrix();              //Done drawing eyes, pop the matrix.
+
+                //Draw mouth
+                gl.glPushMatrix();              //Push a new matrix to store current position.
+                gl.glColor3f(mouthColor[0], mouthColor[1], mouthColor[2]);          //Set color to mouth color.
+                gl.glTranslated(0, headDepth + 0.005, 0.5 * neckSize + 0.3 * headHeight);   //Translate to mouth position.
+
+                //The mouth is a polygon of which the top side is a straight line, and the bottom side are points on a circle.
+                gl.glBegin(GL_POLYGON);             //Begin drawing a polygon.
+                gl.glNormal3d(0,1,0);               //Set normal vector
+                //Draw the top side of the mouth.
+                gl.glVertex3d(-0.15 * headWidth, 0, 0);
+                gl.glVertex3d(0.15 * headWidth, 0, 0);
+                //Calculate the centre coordinate and radius of the circle of which the bottom of the mouth is a subsection.
+                double zOffsetCentre = Math.sin(Math.toRadians(15))*0.15*headWidth;
+                double radius = Math.sqrt(Math.pow(zOffsetCentre,2)+Math.pow(0.15*headWidth,2));
+                //In a loop we generate 50 points on the circle, together forming the bottom of the mouth.
+                for (int i = 0; i < 50; i++) {
+                    gl.glVertex3d(
+                            Math.sin(Math.toRadians(75-3*i))*radius,
+                            0,
+                            zOffsetCentre-Math.cos(Math.toRadians(75-3*i))*radius);
+                }
+                gl.glEnd();                     //We are finished generating points for the polygon.
+                gl.glPopMatrix();               //Return to original matrix.
             }
         }
 
+        // Draw the robot's arm.
+        // The arm is drawn with its shoulder joint centered on the x-y plane hanging down from the origin
         private void drawArm() {
             double armRadius = 0.05;
+            double elbowRadius = 0.055;
 
             if (gs.showStick) {
+                // The stick figure arm is a black line from the shoulder joint to a black sphere at the elbow joint
                 gl.glColor3f(0, 0, 0);
-                drawSphere(stickSphereRad, upperToLowerArm);
+                drawSphere(stickSphereRadius, upperToLowerArm);
                 drawLine(Vector.O, upperToLowerArm);
-            }{
-//            } else {
-                gl.glColor3f(0.1f, 0.1f, 0.1f);
+            } else {
+                // set elbow joint color
+                gl.glColor3f(elbowColor[0], elbowColor[1], elbowColor[2]);
+                // Draw the sphere of the elbow joint
                 gl.glTranslated(0, 0, -1 * upperToLowerArm.length());
-                glut.glutSolidSphere(0.055, 10, 10);
-                gl.glColor3f(0.7f, 0.7f, 0.7f);
+                glut.glutSolidSphere(elbowRadius, 10, 10);
+                // Draw the cylinder representing the upper arm
+                gl.glColor3f(armColor[0], armColor[1], armColor[2]);
                 glut.glutSolidCylinder(armRadius, upperToLowerArm.length(), 10, 10);
                 gl.glTranslated(0, 0, upperToLowerArm.length());
             }
-            gl.glTranslated(upperToLowerArm.x(), upperToLowerArm.y(), upperToLowerArm.z());
-            gl.glRotated(20, 1, 1, 0);
+
+            // Draw the lower arm at the position of the center of the elbow joint and apply a rotation
+            translate(upperToLowerArm);
+            gl.glRotated(lowerArmRotate[0], lowerArmRotate[1], lowerArmRotate[2], lowerArmRotate[3]);
             drawLowerArm();
-            gl.glRotated(-20, 1, 1, 0);
-            gl.glTranslated(-upperToLowerArm.x(), -upperToLowerArm.y(), -upperToLowerArm.z());
+            gl.glRotated(-lowerArmRotate[0], lowerArmRotate[1], lowerArmRotate[2], lowerArmRotate[3]);
+            translate(upperToLowerArm.scale(-1));
         }
 
+        // Draw the robot's lower arm.
+        // The lower arm is drawn centered on the x-y plane hanging down from the origin
         private void drawLowerArm() {
+            // specify the top circle used for the "cut off" cone of the lower arm
             Vector topCirclePos = new Vector(0.02, 0, 0.2);
             double topCircleRadius = 0.1;
 
-            Vector hexPartPos = new Vector(0, 0, 0.25);
-            double hexPartRadius = 0.05;
-
+            // specify the bottom circle used for the "cut off" cone of the lower arm
             Vector bottomCirclePos = new Vector(0, 0, 0);
             double bottomCircleRadius = 0.075;
 
+            // Specify the circle to be used to generate a tapering hex shape to be connected to the sphere of the elbow joint
+            Vector hexPartPos = new Vector(0, 0, lowerArmToHand.length());
+            double hexPartRadius = 0.05;
+
             if (gs.showStick) {
+                // the lower arm stick figure is a black line connected to a black sphere
                 gl.glColor3f(0, 0, 0);
-                drawSphere(stickSphereRad, lowerToHand);
-                drawLine(Vector.O, lowerToHand);
-            }{
-//            } else {
-                translate(lowerToHand);
+                drawSphere(stickSphereRadius, lowerArmToHand);
+                drawLine(Vector.O, lowerArmToHand);
+            } else {
+                // translate to make the lower arm "hang" from the origin
+                gl.glTranslated(lowerArmToHand.x(), lowerArmToHand.y(), lowerArmToHand.z());
 
-                gl.glColor3f(0.2f, 0.2f, 0.2f);
+                gl.glColor3f(lowerArmColor[0], lowerArmColor[1], lowerArmColor[2]);
 
-                // draw top of "cut-off" cone
+                // draw the circle which closes of the top of the "cut-off" cone
                 gl.glBegin(gl.GL_TRIANGLE_FAN);
+
+                // the normal for the top face is directed along z-axis
+                gl.glNormal3d(0, 0, 1);
+
+                // Initial vertex is the center of the circle
                 gl.glVertex3d(topCirclePos.x(), topCirclePos.y(), topCirclePos.z());
 
+                // for every degree draw a triangle from the center to the edge of the circle
                 for (int i = 0; i <= 360; i++) {
+                    // calculate the rad angle only once
                     double angle = Math.toRadians(i);
 
                     gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
@@ -491,97 +719,276 @@ public class RobotRace extends Base {
                 }
                 gl.glEnd();
 
-                // draw bottom of "cut-off" cone
+                // draw the circle which closes of the bottom of the "cut-off" cone
                 gl.glBegin(gl.GL_TRIANGLE_FAN);
+
+                // the normal for the bottom face is directed along negative z-axis
+                gl.glNormal3d(0, 0, -1);
+
                 gl.glVertex3d(bottomCirclePos.x(), bottomCirclePos.y(), bottomCirclePos.z());
 
                 for (int i = 0; i <= 360; i++) {
                     double angle = Math.toRadians(i);
-
                     gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
                                   bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
                                   bottomCirclePos.z());
                 }
                 gl.glEnd();
 
-                // draw "cut-off" cone formed by the two circles
+                /*
+                Draw "cut-off"-cone formed by the two circles. To draw this cone we use a triangle strip,
+                drawing a total of 720 triangles in a for loop, using some basic geometry to determine the position
+                of the coordinates on the bottom and top circle-surfaces. We want smooth shading on this surface.
+                To achieve this we define a normal for each vertex, which is the average of the normalized
+                normals of all the triangles this vertex borders. Since GL_NORMALIZE is enabled, if we sum the
+                3 normals of the surfaces bordering the vertex, we don't have to normalize ourselves. Consider the
+                following ASCII image:
+                  TopPrev        TopCur         TopNext
+                    *              *              *
+                    **             **             *
+                    * *            * *            *
+                    *  *           *  *           *
+                    *   *     n2   *   *     n4   *
+                    *    *         *    *         *
+                    *     *        *     *        *
+                    *      *       *      *       *
+                    *       *      *       *      *
+                    *        *     *        *     *
+                    *   n1    *    *    n3   *    *
+                    *          *   *          *   *
+                    *           *  *           *  *
+                    *            * *            * *
+                    *             **             **
+                    *              *              *
+                 BotPrev        BotCur          BotNext
+
+                 In this image BotPrev, BotCur and BotNext are coordinates on the bottom circle, respectively of the
+                 previous, current and next loop (the current ones being the vertices that we are drawing in this loop
+                 iteration). Similarly TopPrev, TopCur and TopNext are coordinates on the top circle. The normal for the
+                 vertex on BotCur, will be the average of the normals n1, n2 and n3. The normal of the vertex on TopCur
+                 will be the average of normals n2, n3 and n4. In order to obtain these normals we take cross product of
+                 vectors going between the points.
+
+                 In each iteration of the loop, the normals n3 and n4 can be reused. The vectors between
+                 TopCur and BotCur, TopCur and BotNext and between TopNext and BotNext can be reused as well.
+                 We calculate these parameters for the iteration i=-1 before the loop starts.
+                */
                 gl.glBegin(gl.GL_TRIANGLE_STRIP);
 
-                for (int i = 0; i <= 360; i++) {
-                    double angle = Math.toRadians(i);
 
+                /*
+                Calculate reusable vectors and normals for iteration i=-1 before the loop starts. We always calculate
+                the vector going from top to bottom. In the calculation of the normals we have to keep the right-hand
+                rule for cross product in mind.
+                */
+                double angle = Math.toRadians(-1);
+                double angleNext = Math.toRadians(0);
+                Vector vectorTopCurToBotCur = new Vector(
+                        bottomCircleRadius*Math.cos(angle) + bottomCirclePos.x() - topCircleRadius*Math.cos(angle) - topCirclePos.x(),
+                        bottomCircleRadius*Math.sin(angle) + bottomCirclePos.y() - topCircleRadius*Math.sin(angle) - topCirclePos.y()
+                        ,bottomCirclePos.z() - topCirclePos.z());
+                Vector vectorTopCurToBotNext = new Vector(
+                        bottomCircleRadius*Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius*Math.cos(angle) - topCirclePos.x(),
+                        bottomCircleRadius*Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius*Math.sin(angle) - topCirclePos.y()
+                        ,bottomCirclePos.z() - topCirclePos.z());
+                Vector vectorTopNextToBotNext = new Vector(
+                        bottomCircleRadius*Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius*Math.cos(angleNext) - topCirclePos.x(),
+                        bottomCircleRadius*Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius*Math.sin(angleNext) - topCirclePos.y()
+                        ,bottomCirclePos.z() - topCirclePos.z());
+
+                Vector n1;
+                Vector n2;
+                Vector n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
+                Vector n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+
+                for (int i = 0; i <= 360; i++) {
+                    // calculate the angle only once for every degree:
+                    angle = angleNext;
+                    angleNext = Math.toRadians(i+1);
+
+                    //What was in the previous loop the vector from TopNext to BotNext, is in iteration of the loop the
+                    //vector between TopCur and BotCur, so we can pass it on. Also calculate the other 2 necessary vectors:
+                    vectorTopCurToBotCur = vectorTopNextToBotNext;
+                    vectorTopCurToBotNext = new Vector(
+                            bottomCircleRadius*Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius*Math.cos(angle) - topCirclePos.x(),
+                            bottomCircleRadius*Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius*Math.sin(angle) - topCirclePos.y()
+                            ,bottomCirclePos.z() - topCirclePos.z());
+                    vectorTopNextToBotNext = new Vector(
+                            bottomCircleRadius*Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius*Math.cos(angleNext) - topCirclePos.x(),
+                            bottomCircleRadius*Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius*Math.sin(angleNext) - topCirclePos.y()
+                            ,bottomCirclePos.z() - topCirclePos.z());
+
+
+                    /*
+                    What was in the previous iteration of the loop n3 is now n1, and what was n4 is now n2, so we pass
+                    on these values. Also calculate the new normals n3 and n4 using cross product, taking the right
+                    hand rule in mind. Normalize these vectors.
+                    */
+                    n1=n3;
+                    n2=n4;
+                    n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
+                    n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+
+
+                    //Now we just add the relevant vectors up for the bottom normal and top normal.
+                    Vector normalVectorBottom = n1.add(n2.add(n3));
+                    Vector normalVectorTop = n2.add(n3.add(n4));
+
+
+                    // Draw the bottom vertex using the calculated normal.
+                    gl.glNormal3d(normalVectorBottom.x(), normalVectorBottom.y(), normalVectorBottom.z());
                     gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
                                   bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
                                   bottomCirclePos.z());
+                    // Draw the top vertex using the calculated normal.
+                    gl.glNormal3d(normalVectorTop.x(), normalVectorTop.y(), normalVectorTop.z());
                     gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
                                   topCircleRadius * Math.sin(angle) + topCirclePos.y(),
                                   topCirclePos.z());
                 }
 
-                gl.glEnd();
+                gl.glEnd();                 //Finished drawing lower arm.
 
-                gl.glColor3f(0.1f, 0.1f, 0.1f);
-
+                /* Now we draw the "hex part", connecting the lower arm to the elbow joint. The technique we use for
+                * this is exactly the same as for the lower arm cone, so we refer to that for clarification. Now, the
+                * top circle is on the elbow joint, and the bottom circle is the top of the lower arm cone (the coordinates
+                * of this circle are called topCircle, which might be confusing). We use 60 degree steps, so we have 12
+                * triangles total.
+                */
+                gl.glColor3f(hexPartColor[0], hexPartColor[1], hexPartColor[2]);        //Set color
                 gl.glBegin(gl.GL_TRIANGLE_STRIP);
 
-                for (int i = 0; i <= 360; i += 60) {
-                    double angle = Math.toRadians(i);
+                //Again we calculate the vectors and normals that the loop reuses from the previous iteration i=-60:
+                angle = Math.toRadians(-60);
+                angleNext = Math.toRadians(0);
 
-                    gl.glVertex3d(hexPartRadius * Math.cos(angle) + hexPartPos.x(),
-                            hexPartRadius * Math.sin(angle) + hexPartPos.y(),
-                            hexPartPos.z());
+                vectorTopCurToBotCur = new Vector(
+                        topCircleRadius * Math.cos(angle) + topCirclePos.x() - hexPartRadius * Math.cos(angle) - hexPartPos.x(),
+                        topCircleRadius * Math.sin(angle) + topCirclePos.y() - hexPartRadius * Math.sin(angle) - hexPartPos.y()
+                        ,topCirclePos.z() - hexPartPos.z());
+                vectorTopCurToBotNext = new Vector(
+                        topCircleRadius*Math.cos(angleNext) + topCirclePos.x() - hexPartRadius*Math.cos(angle) - hexPartPos.x(),
+                        topCircleRadius*Math.sin(angleNext) + topCirclePos.y() - hexPartRadius*Math.sin(angle) - hexPartPos.y()
+                        ,topCirclePos.z() - hexPartPos.z());
+                vectorTopNextToBotNext = new Vector(
+                        topCircleRadius*Math.cos(angleNext) + topCirclePos.x() - hexPartRadius*Math.cos(angleNext) - hexPartPos.x(),
+                        topCircleRadius*Math.sin(angleNext) + topCirclePos.y() - hexPartRadius*Math.sin(angleNext) - hexPartPos.y()
+                        ,topCirclePos.z() - hexPartPos.z());
+
+                n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
+                n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+
+                for (int i = 0; i <= 360; i += 60) {
+                    //Reuse angle from previous loop iteration.
+                    angle = angleNext;
+                    angleNext = Math.toRadians(i+60);
+
+                    //Reuse TopNext to BotNext vector from previous iteration as TopCur to BotCur vector. Also calculate
+                    //calculate other 2 necessary vectors for normal calculation:
+                    vectorTopCurToBotCur = vectorTopNextToBotNext;
+                    vectorTopCurToBotNext = new Vector(
+                            topCircleRadius*Math.cos(angleNext) + topCirclePos.x() - hexPartRadius*Math.cos(angle) - hexPartPos.x(),
+                            topCircleRadius*Math.sin(angleNext) + topCirclePos.y() - hexPartRadius*Math.sin(angle) - hexPartPos.y()
+                            ,topCirclePos.z() - hexPartPos.z());
+                    vectorTopNextToBotNext = new Vector(
+                            topCircleRadius*Math.cos(angleNext) + topCirclePos.x() - hexPartRadius*Math.cos(angleNext) - hexPartPos.x(),
+                            topCircleRadius*Math.sin(angleNext) + topCirclePos.y() - hexPartRadius*Math.sin(angleNext) - hexPartPos.y()
+                            ,topCirclePos.z() - hexPartPos.z());
+
+                    //Just like before we can reuse n3 and n4 as n1 and n2 respectively. Calculate new normals using
+                    //cross product keeping right hand rule in mind. Normalize.
+                    n1=n3;
+                    n2=n4;
+                    n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
+                    n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+
+                    //Add the vector n1, n2 and n3 together for the bottom normal vector, and n2, n3, n4 for the top one.
+                    Vector normalVectorTopCircle = n1.add(n2.add(n3));
+                    Vector normalVectorHexPart = n2.add(n3.add(n4));
+
+                    //Use the calculated normals and draw the bottom coordinate.
+                    gl.glNormal3d(normalVectorTopCircle.x(), normalVectorTopCircle.y(), normalVectorTopCircle.z());
                     gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
                             topCircleRadius * Math.sin(angle) + topCirclePos.y(),
                             topCirclePos.z());
+                    //Use the calculated normal and draw the top coordinate.
+                    gl.glNormal3d(normalVectorHexPart.x(), normalVectorHexPart.y(), normalVectorHexPart.z());
+                    gl.glVertex3d(hexPartRadius * Math.cos(angle) + hexPartPos.x(),
+                            hexPartRadius * Math.sin(angle) + hexPartPos.y(),
+                            hexPartPos.z());
                 }
 
-                gl.glEnd();
+                gl.glEnd();                 //Finish drawing *phew*.
             }
 
+            // draw the hand at the wrist joint
             drawHand();
         }
 
+        // Draw the robot's hand.
+        // The hand is drawn centered on the x-y plane hanging down from the origin
         private void drawHand() {
             double diskHeight = 0.05;
             double diskRadius = 0.05;
 
-            gl.glPushMatrix();
+            if (!gs.showStick) {
+                gl.glPushMatrix();
 
-            gl.glColor3f(0.55f, 0.55f, 0.55f);
+                // The hand consists of a cylinder and the claws, start the cylinder drawing
+                gl.glColor3f(handCylinderColor[0], handCylinderColor[1], handCylinderColor[2]);
 
-            gl.glTranslated(0, 0, -diskHeight);
-            glut.glutSolidCylinder(diskRadius, diskHeight, 24, 24);
+                // "hang" the cylinder below the origin
+                gl.glTranslated(0, 0, -diskHeight);
+                glut.glutSolidCylinder(diskRadius, diskHeight, 24, 24);
 
-            gl.glTranslated(-diskRadius + 0.005, 0, -0.1 * diskHeight);
+                // position the claw such that it clips the the cylinder
+                gl.glPushMatrix();
+                gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
+                drawClaw();
+                gl.glPopMatrix();
 
-            drawClaw();
+                // Draw another two claws each angled 120 degrees from one another
+                gl.glPushMatrix();
+                gl.glRotated(120, 0, 0, 1);
+                gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
+                drawClaw();
+                gl.glPopMatrix();
 
-            gl.glTranslated(2 * diskRadius - 0.01, 0, 0);
+                gl.glPushMatrix();
+                gl.glRotated(240, 0, 0, 1);
+                gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
+                drawClaw();
+                gl.glPopMatrix();
 
-            gl.glScaled(-1, 1, 1);
-
-            drawClaw();
-
-            gl.glPopMatrix();
+                gl.glPopMatrix();
+            }
         }
 
+        // The claw is drawn centered on the y-z plane on the side of the negative x-axis and down from the origin along the z-axis
         private void drawClaw() {
             double depth = 0.025;
+            // the claw is composed of several circular segments, draw each of the segments according to the following
+            // specifications and line the up to make more complex curved claw
             double[] angles = { 40, 15, 15, 30, 40 };
             double[] radii = { 0.025, 0.075, 0.05, 0.15, 0.2 };
             double width = 0.05;
+            // store the calculated x and z coordinates, these are reused by multiple glVertex calls
+            double[][] vertices = new double[4][2];
 
             gl.glPushMatrix();
-            gl.glColor3f(0.3f, 0.3f, 0.3f);
+            gl.glColor3f(clawColor[0], clawColor[1], clawColor[2]);
 
-            gl.glRotated(-90, 0 ,1, 0);
+            // The below draw calls position the claw lying on the x-y plane. now rotate to "hang off" of the y-z plane
+            gl.glRotated(-90, 0, 1, 0);
+            // Scale the claw to a more appropriate size
             gl.glScaled(0.6, 0.6, 0.6);
 
             // Translate to position the claw centred above the origin.
-            gl.glTranslated(-0.5 * radii[0], 0, 0);
+            gl.glTranslated(-radii[0] - depth, 0, 0);
+            // for every segment ...
             for (int angle_idx = 0; angle_idx < angles.length; angle_idx++) {
-                double[][] vertices = new double[4][2];
 
+                // After the first segment line up the next segment with the previous one
                 if (angle_idx != 0) {
                     gl.glRotated(-angles[angle_idx - 1], 0, 1, 0);
                     gl.glTranslated(radii[angle_idx - 1] - radii[angle_idx], 0, 0);
@@ -589,197 +996,256 @@ public class RobotRace extends Base {
 
                 gl.glBegin(gl.GL_QUADS);
 
+                // Split up the angle into 2 degree pieces and draw quads to realize the curvature
                 for (int i = 0; i < angles[angle_idx]; i += 2) {
+                    // first 2D coordinate of inner circle
                     vertices[0][0] = radii[angle_idx] * Math.cos(Math.toRadians(i));
                     vertices[0][1] = radii[angle_idx] * Math.sin(Math.toRadians(i));
+                    // first coordinate of outer circle
                     vertices[1][0] = (radii[angle_idx] + width) * Math.cos(Math.toRadians(i));
                     vertices[1][1] = (radii[angle_idx] + width) * Math.sin(Math.toRadians(i));
+                    // second coordinate of inner circle
                     vertices[2][0] = radii[angle_idx] * Math.cos(Math.toRadians(i + 2));
                     vertices[2][1] = radii[angle_idx] * Math.sin(Math.toRadians(i + 2));
+                    // second coordinate of outer circle
                     vertices[3][0] = (radii[angle_idx] + width) * Math.cos(Math.toRadians(i + 2));
                     vertices[3][1] = (radii[angle_idx] + width) * Math.sin(Math.toRadians(i + 2));
 
-                    // front face
+                    // front face with the normal along the y-axis
+                    gl.glNormal3d(0, 1, 0);
                     gl.glVertex3d(vertices[0][0], depth, vertices[0][1]);
                     gl.glVertex3d(vertices[1][0], depth, vertices[1][1]);
                     gl.glVertex3d(vertices[3][0], depth, vertices[3][1]);
                     gl.glVertex3d(vertices[2][0], depth, vertices[2][1]);
                     // back face
+                    gl.glNormal3d(0, -1, 0);
                     gl.glVertex3d(vertices[0][0], -depth, vertices[0][1]);
                     gl.glVertex3d(vertices[1][0], -depth, vertices[1][1]);
                     gl.glVertex3d(vertices[3][0], -depth, vertices[3][1]);
                     gl.glVertex3d(vertices[2][0], -depth, vertices[2][1]);
-                    // side
-                    gl.glVertex3d(vertices[0][0], depth, vertices[0][1]);
-                    gl.glVertex3d(vertices[1][0], -depth, vertices[0][1]);
-                    gl.glVertex3d(vertices[2][0], -depth, vertices[2][1]);
-                    gl.glVertex3d(vertices[2][0], depth, vertices[2][1]);
+                    // inner facing side
+                    makeFaceVertex4(vertices[0][0], depth, vertices[0][1],
+                                    vertices[0][0], -depth, vertices[0][1],
+                                    vertices[2][0], -depth, vertices[2][1],
+                                    vertices[2][0], depth, vertices[2][1]);
 
-                    gl.glVertex3d(vertices[1][0], depth, vertices[1][1]);
-                    gl.glVertex3d(vertices[1][0], -depth, vertices[1][1]);
-                    gl.glVertex3d(vertices[3][0], -depth, vertices[3][1]);
-                    gl.glVertex3d(vertices[3][0], depth, vertices[3][1]);
+                    // outer facing side
+                    makeFaceVertex4(vertices[1][0], depth, vertices[1][1],
+                                    vertices[3][0], depth, vertices[3][1],
+                                    vertices[3][0], -depth, vertices[3][1],
+                                    vertices[1][0], -depth, vertices[1][1]);
                 }
 
                 gl.glEnd();
             }
 
-//            for (int i = 0; i < 20; i += 2) {
-//                vertices[i][0] = 0.2 * Math.cos(Math.toRadians(i));
-//                vertices[i][1] = 0.2 * Math.sin(Math.toRadians(i));
-//                vertices[i + 1][0] = 0.25 * Math.cos(Math.toRadians(i));
-//                vertices[i + 1][1] = 0.25 * Math.sin(Math.toRadians(i));
-//            }
-//
-//            for (int i = 0; i < 48; i += 2) {
-//                vertices[i + 20][0] = 0.1 * Math.cos(Math.toRadians(i));
-//                vertices[i + 20][1] = 0.1 * Math.sin(Math.toRadians(i));
-//                vertices[i + 21][0] = 0.15 * Math.cos(Math.toRadians(i));
-//                vertices[i + 21][1] = 0.15 * Math.sin(Math.toRadians(i));
-//            }
-//
-//            for (int i = 0; i < 48; i += 2) {
-//                vertices[i + 68][0] = 0.25 * Math.cos(Math.toRadians(i));
-//                vertices[i + 68][1] = 0.25 * Math.sin(Math.toRadians(i));
-//                vertices[i + 69][0] = 0.3 * Math.cos(Math.toRadians(i));
-//                vertices[i + 69][1] = 0.3 * Math.sin(Math.toRadians(i));
-//            }
-//
-//            gl.glPushMatrix();
-//            gl.glColor3f(0.3f, 0.3f, 0.3f);
-//
-//            gl.glRotated(-90, 0 ,1, 0);
-//            gl.glScaled(0.6, 0.6, 0.6);
-//
-//            // Translate to position the claw centred above the origin.
-//            gl.glTranslated(-0.225, 0, 0);
-//
-//
-//            gl.glBegin(gl.GL_QUADS);
-//
-//            for (int i = 0; i < 18; i += 2) {
-//                // front face
-//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
-//                // back face
-//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
-//                // side
-//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
-//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
-//
-//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
-//            }
-//            gl.glEnd();
-//
-//            gl.glRotated(-18, 0, 1, 0);
-//            gl.glTranslated(0.1, 0, 0);
-//
-//            gl.glBegin(gl.GL_QUADS);
-//            for (int i = 20; i < 66; i += 2) {
-//                // front face
-//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
-//                // back face
-//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
-//                // sides
-//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
-//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
-//
-//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
-//            }
-//            gl.glEnd();
-//
-//            // Rotate the angle of the previous segment and translate the difference in radius
-//            gl.glRotated(-46, 0, 1, 0);
-//            gl.glTranslated(-0.15, 0, 0);
-//
-//            gl.glBegin(gl.GL_QUADS);
-//            for (int i = 68; i < 114; i += 2) {
-//                // front face
-//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
-//                // back face
-//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
-//                // side
-//                gl.glVertex3d(vertices[i][0], depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i][0], -depth, vertices[i][1]);
-//                gl.glVertex3d(vertices[i + 2][0], -depth, vertices[i + 2][1]);
-//                gl.glVertex3d(vertices[i + 2][0], depth, vertices[i + 2][1]);
-//
-//                gl.glVertex3d(vertices[i + 1][0], depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 1][0], -depth, vertices[i + 1][1]);
-//                gl.glVertex3d(vertices[i + 3][0], -depth, vertices[i + 3][1]);
-//                gl.glVertex3d(vertices[i + 3][0], depth, vertices[i + 3][1]);
-//            }
-//            // close off claw
-//            gl.glVertex3d(vertices[114][0], depth, vertices[114][1]);
-//            gl.glVertex3d(vertices[114][0], -depth, vertices[114][1]);
-//            gl.glVertex3d(vertices[115][0], -depth, vertices[115][1]);
-//            gl.glVertex3d(vertices[115][0], depth, vertices[115][1]);
-//
-//
-//            gl.glEnd();
+            // close off the claw. The last coordinates in vertices are coordinates for the final piece of the final segment
+            gl.glBegin(gl.GL_QUADS);
+            makeFaceVertex4(vertices[2][0], -depth, vertices[2][1],
+                            vertices[3][0], -depth, vertices[3][1],
+                            vertices[3][0], depth, vertices[3][1],
+                            vertices[2][0], depth, vertices[2][1]);
+            gl.glEnd();
 
             gl.glPopMatrix();
 
         }
 
+        /*
+         * Method that draws the upper leg, and then calls the lower leg method to draw itself. It assumes that the
+         * coordinate (0,0,0) corresponds with the leg joint connecting the leg to the torso. It assumes that the z
+         * direction is straight downwards.
+        */
         private void drawLeg() {
+            double upperLegWidth = 0.2;
+            double torsoJointRadius = 0.1;
+
+            gl.glPushMatrix();
+            gl.glRotated(upperLegAngle,1,0,0);                  //Rotate around the upperLegAngle
+
             if (gs.showStick) {
-                gl.glColor3f(0, 0, 0);
-                drawSphere(stickSphereRad, upperToLowerLeg);
-                drawLine(Vector.O, upperToLowerLeg);
+                gl.glColor3d(0,0,0);                            //Set color to black for stick figure.
+                drawSphere(stickSphereRadius, upperToLowerLeg);  //Draw a sphere on the knee joint using the upperToLowLeg vector.
+                drawLine(Vector.O, upperToLowerLeg);          //Draw a line to the knee joint sphere.
+            } else {
+                //Set color to torsoJointColor and draw the sphere forming the joint.
+                gl.glColor3f(torsoJointColor[0], torsoJointColor[1], torsoJointColor[2]);
+                glut.glutSolidSphere(torsoJointRadius, 50, 50);
+
+                //Draw the upper leg.
+                gl.glColor3f(upperLegColor[0],upperLegColor[1],upperLegColor[2]);   //Set the color to upper leg color.
+                gl.glPushMatrix();                                                  //Store the current matrix.
+                gl.glTranslated(0, 0.0, -0.5 * upperToLowerLeg.length());           //Translate to centre of upper leg.
+                gl.glScaled(upperLegWidth, upperLegWidth, upperToLowerLeg.length());//Scale coordinate system to leg size.
+                glut.glutSolidCube(1);                                              //Draw a unit cube.
+                gl.glPopMatrix();                                                   //Pop the matrix.
             }
+
+            //Use upperToLowerLeg vector to translate to joint connecting upper and lower leg, then draw it.
             gl.glTranslated(upperToLowerLeg.x(), upperToLowerLeg.y(), upperToLowerLeg.z());
-//            gl.glRotated(-10, 0, 1, 0);
             drawLowerLeg();
-//            gl.glRotated(10, 0, 1, 0);
-            gl.glTranslated(-upperToLowerLeg.x(), -upperToLowerLeg.y(), -upperToLowerLeg.z());
+            gl.glPopMatrix();       //Pop the matrix.
         }
 
+        //Method that draws the lower leg, and calls the foot to draw itself. It assums that the coordinate (0,0,0)
+        //corresponds with the knee joint. It also assumes that the z direction is in the direction of the upper knee.
         private void drawLowerLeg() {
+            double lowerLegWidth = 0.2;
+            double angleFootLowerLeg = 10;
+
             if (gs.showStick) {
-                gl.glColor3f(0, 0, 0);
-                drawSphere(stickSphereRad, lowerToFoot);
-                drawLine(Vector.O, lowerToFoot);
+                gl.glColor3d(0, 0, 0);                    //Set color to black for stick figure.
+                gl.glRotated(lowerLegAngle,1,0,0);      //Rotate around the lowerLegAngle
+                //Draw a sphere using the lowerLegToFoot vector on the joint connecting the foot and the lower leg,
+                // and a line to it.
+                drawSphere(stickSphereRadius, lowerLegToFoot);
+                drawLine(Vector.O, lowerLegToFoot);
+            } else {
+
+                gl.glPushMatrix();                      //Push the matrix.
+
+                /*
+                 * Start drawing the joint connecting upper and lower leg. Translate to the rotation point of the lower
+                 * leg, and then rotate half the angle between lower and upper leg. Looked upon from the side the joint
+                 * is an isosceles triangle, where the vertex angle is the angle between the upper and lower leg, and
+                 * the length of the legs of the triangle is the leg-width. We make use of the makeFaceVertex function
+                 * to draw the shapes, which automatically sets the normals correctly, as long as we define the vertices
+                 * in counterclockwise fashion.
+                */
+
+                //Translate to the vertex of the isosceles triangle and rotate so that the y axis is along the median.
+                gl.glTranslated(0,-0.5*lowerLegWidth,0);
+                gl.glRotated(0.5*lowerLegAngle,1,0,0);
+
+                //Set color, calculate the median and base lengths of triangle using leg width and angle between legs.
+                gl.glColor3f(jointUpperLowerLegColor[0], jointUpperLowerLegColor[1], jointUpperLowerLegColor[2]);
+                double medianLength = lowerLegWidth*Math.cos(Math.toRadians(0.5*lowerLegAngle));
+                double baseLength = 2*lowerLegWidth*Math.sin(Math.toRadians(-0.5*lowerLegAngle));
+                //Draw the right side of the joint.
+                gl.glBegin(GL_TRIANGLES);
+                makeFaceVertex3(0.5*lowerLegWidth,0,0,
+                        0.5*lowerLegWidth, medianLength, -0.5*baseLength,
+                        0.5*lowerLegWidth, medianLength, 0.5*baseLength);
+                //Draw the left side of the joint.
+                makeFaceVertex3(-0.5*lowerLegWidth,0,0,
+                        -0.5*lowerLegWidth, medianLength, 0.5*baseLength,
+                        -0.5*lowerLegWidth, medianLength, -0.5*baseLength);
+                gl.glEnd();
+
+                //Draw the front side of the joint.
+                gl.glBegin(GL_QUADS);
+                makeFaceVertex4(-0.5*lowerLegWidth, medianLength, 0.5*baseLength,
+                        0.5*lowerLegWidth, medianLength, 0.5*baseLength,
+                        0.5*lowerLegWidth, medianLength, -0.5*baseLength,
+                        -0.5*lowerLegWidth, medianLength, -0.5*baseLength);
+                gl.glEnd();
+
+                //Now we have drawn the joint, we continue by drawing the actual lower leg itself.
+                gl.glRotated(0.5*lowerLegAngle,1,0,0);                  //Rotate the remaining half angle.
+                gl.glColor3f(lowerLegColor[0],lowerLegColor[1],lowerLegColor[2]);      //Set color to lower leg color.
+                gl.glTranslated(0, 0.5*lowerLegWidth, -0.5 * lowerLegToFoot.length());    //Translate to the centre of the lower leg.
+                gl.glPushMatrix();                                                      //Store current matrix.
+                gl.glScaled(lowerLegWidth, lowerLegWidth, lowerLegToFoot.length());        //Scale to the leg size.
+                glut.glutSolidCube(1);                                                  //Draw a unit cube
+                gl.glPopMatrix();                                                       //Return to previous matrix.
+
+                /*
+                We draw 2 triangles and a quad as a joint connecting lower leg to foot. Seen from the side, this is
+                again a triangle, of which the bottom edge runs along the foot, and the top vertex aligns with the
+                back edge of the lower leg, of which the coordinates are defined by (x,yOffsetLowerLeg,zOffsetLowerLeg).
+                Using makeFaceVertex function so normals are done automatically, as long as we define vertices in
+                counterclockwise fashion.
+                */
+                gl.glTranslated(0, 0.5 * lowerLegWidth, -0.5 * lowerLegToFoot.length()); //Translate to corner of the joint.
+                gl.glRotated(angleFootLowerLeg, 1, 0, 0);             //Rotate with the angle between foot and lower leg.
+                //Calculate y and z coordinates of lower leg edge. Add 2mm to zOffsetLowerLeg to combat rounding errors.
+                double yOffsetLowerLeg = -lowerLegWidth*Math.cos(Math.toRadians(angleFootLowerLeg));
+                double zOffsetLowerLeg = lowerLegWidth*Math.sin(Math.toRadians(angleFootLowerLeg))+0.002;
+                gl.glBegin(GL_TRIANGLES);
+                //Draw right side of joint
+                makeFaceVertex3(0.5*lowerLegWidth,0,0,
+                        0.5*lowerLegWidth,yOffsetLowerLeg, zOffsetLowerLeg,
+                        0.5*lowerLegWidth,-lowerLegWidth,0);
+                //Draw left side of joint
+                makeFaceVertex3(-0.5*lowerLegWidth,0,0,
+                        -0.5*lowerLegWidth,-lowerLegWidth,0,
+                        -0.5*lowerLegWidth,yOffsetLowerLeg, zOffsetLowerLeg);
+                gl.glEnd();
+                //Draw back side of joint
+                gl.glBegin(GL_QUADS);
+                makeFaceVertex4(0.5*lowerLegWidth,-lowerLegWidth,0,
+                        0.5*lowerLegWidth,yOffsetLowerLeg, zOffsetLowerLeg,
+                        -0.5*lowerLegWidth,yOffsetLowerLeg, zOffsetLowerLeg,
+                        -0.5*lowerLegWidth,-lowerLegWidth,0);
+                gl.glEnd();
+
+                gl.glTranslated(0,-0.5*lowerLegWidth,0);        //Translate to centre of leg.
+                drawFoot();                                     //Draw foot.
+                gl.glPopMatrix();                               //Return to previous matrix.
+
             }
         }
 
+        /*
+         * Method that draws the foot. It assumes that the (0,0,0) coordinate is on the joint connecting the foot
+         * to the lower leg. It also assumes that the Z direction is straight upwards. The foot consists of 5 quads
+         * (the top is open), together forming a box where the front side is slanted. We again use the
+         * makeFaceVertex method to draw the quads, which does the normal for us, as long as we define the vertices in
+         * clockwise fashion.
+        */
+        private void drawFoot() {
+            double width = 0.2;
+
+            gl.glColor3f(footColor[0],footColor[1],footColor[2]);        //Set color to foot color.
+
+            //Draw right side of foot
+            gl.glBegin(GL_QUADS);
+            makeFaceVertex4(0.5 * width, -0.5*width, 0,
+                    0.5 *width,-0.5*width,-0.07,
+                    0.5 * width,0.65*width,-0.07,
+                    0.5 * width,0.5*width,0);
+
+
+            //Draw left side of foot
+            makeFaceVertex4(-0.5 * width, -0.5*width, 0,
+                    -0.5 * width,0.5*width,0,
+                    -0.5 * width,0.65*width,-0.07,
+                    -0.5 *width,-0.5*width,-0.07);
+
+
+            //Draw back of foot
+            makeFaceVertex4(-0.5 * width, -0.5*width, 0,
+                    -0.5 *width,-0.5*width,-0.07,
+                    0.5 *width,-0.5*width,-0.07,
+                    0.5 * width, -0.5*width, 0);
+
+            //Draw front of foot.
+            makeFaceVertex4(0.5 * width,0.65*width,-0.07,
+                    -0.5 * width,0.65*width,-0.07,
+                    -0.5 * width,0.5*width,0,
+                    0.5 * width,0.5*width,0);
+
+            //Draw bottom of foot.
+            makeFaceVertex4(0.5 *width,-0.5*width,-0.07,
+                    -0.5 *width,-0.5*width,-0.07,
+                    -0.5 * width,0.65*width,-0.07,
+                    0.5 * width,0.65*width,-0.07);
+            gl.glEnd();
+
+        }
+
+        // Draw a simple angular shoulder centered round the origin with an offset to line up with the shoulder joint of the torso.
         private void drawShoulder() {
-//            if (!gs.showStick) {
             {
                 gl.glBegin(gl.GL_TRIANGLES);
                 // front face
+                gl.glNormal3d(0, 1, 0);
                 gl.glVertex3d(-0.05, 0.075, 0.05);
                 gl.glVertex3d(0.1, 0.075, 0.05);
                 gl.glVertex3d(-0.05, 0.075, -0.1);
 
                 // back face
+                gl.glNormal3d(0, -1, 0);
                 gl.glVertex3d(-0.05, -0.075, 0.05);
                 gl.glVertex3d(0.1, -0.075, 0.05);
                 gl.glVertex3d(-0.05, -0.075, -0.1);
@@ -787,53 +1253,60 @@ public class RobotRace extends Base {
 
                 gl.glBegin(gl.GL_QUADS);
                 // top face
+                gl.glNormal3d(0, 0, 1);
                 gl.glVertex3d(-0.05, -0.075, 0.05);
                 gl.glVertex3d(0.1, -0.075, 0.05);
                 gl.glVertex3d(0.1, 0.075, 0.05);
                 gl.glVertex3d(-0.05, 0.075, 0.05);
+
                 // face connected to arm
-                gl.glVertex3d(0.1, -0.075, 0.05);
-                gl.glVertex3d(0.1, 0.075, 0.05);
-                gl.glVertex3d(-0.05, 0.075, -0.1);
-                gl.glVertex3d(-0.05, -0.075, -0.1);
+                makeFaceVertex4(0.1, -0.075, 0.05,
+                                -0.05, -0.075, -0.1,
+                                -0.05, 0.075, -0.1,
+                                0.1, 0.075, 0.05);
                 gl.glEnd();
 
             }
         }
 
+        // Draw the main component of the robot
         private void drawTorso() {
+            // The coordinate in the middle of the between the two hip joints
             Vector centerBottom = new Vector(0, 0, -0.25f);
             double depth = 0.35;
             double spaceToShoulderJoint = 0.05;
 
-
             if (gs.showStick) {
+                // Draw the several joints connected to the torso. The stick figure is black
                 gl.glColor3f(0, 0, 0);
-                drawSphere(stickSphereRad, neck);
-                drawSphere(stickSphereRad, rightShoulder);
-                drawSphere(stickSphereRad, leftShoulder);
-                drawSphere(stickSphereRad, rightHip);
-                drawSphere(stickSphereRad, leftHip);
+                drawSphere(stickSphereRadius, neck);
+                drawSphere(stickSphereRadius, rightShoulder);
+                drawSphere(stickSphereRadius, leftShoulder);
+                drawSphere(stickSphereRadius, rightHip);
+                drawSphere(stickSphereRadius, leftHip);
 
+                // Draw the lines connecting the joints
                 drawLine(neck, rightShoulder);
                 drawLine(neck, leftShoulder);
                 drawLine(neck, centerBottom);
                 drawLine(rightHip, leftHip);
-            }{
-//            } else {
-                gl.glColor3f(0.5f, 0.5f, 0.5f);
+            } else {
                 gl.glPushMatrix();
+                gl.glColor3f(torsoColor[0], torsoColor[1], torsoColor[2]);
 
+                // draw the right shoulder
                 translate(rightShoulder);
                 drawShoulder();
                 translate(rightShoulder.scale(-1));
 
+                // draw the left shoulder. The same as the right shoulder only now mirrored
                 translate(leftShoulder);
                 gl.glScaled(-1, 1, 1);
                 drawShoulder();
                 gl.glScaled(-1, 1, 1);
                 translate(leftShoulder.scale(-1));
 
+                // Draw the main beam making up the torso. Scale according to above defined dimensions for the torso
                 gl.glPushMatrix();
                 gl.glScaled(Math.abs(rightShoulder.x()) + Math.abs(leftShoulder.x()) - spaceToShoulderJoint,
                                      depth,
@@ -841,11 +1314,12 @@ public class RobotRace extends Base {
                 glut.glutSolidCube(1);
                 gl.glPopMatrix();
 
-                gl.glColor3f(0.3f, 0.3f, 0.3f);
-
                 // Place a "screen" on the front face
                 gl.glPushMatrix();
-                gl.glTranslated(0, 0.18, 0.05);
+                gl.glColor3f(torsoScreenColor[0], torsoScreenColor[1], torsoScreenColor[2]);
+
+                // Scale and translate relative to torso specification
+                gl.glTranslated(0, 0.55 * depth, -0.75 * Math.abs(rightHip.z()) + neck.z());
                 gl.glScaled((Math.abs(rightShoulder.x()) + Math.abs(leftShoulder.x()) - spaceToShoulderJoint) * 0.75,
                             0.02,
                             (Math.abs(rightHip.z()) + neck.z()) * 0.5);
@@ -853,7 +1327,7 @@ public class RobotRace extends Base {
                 gl.glPopMatrix();
 
                 // Place a nob on the front face
-                gl.glTranslated(0.18, 0.17, -0.18);
+                gl.glTranslated(0.55 * Math.abs(rightShoulder.x()), 0.5 * depth, 0.55 * rightHip.z());
                 gl.glRotated(-90, 1, 0, 0);
                 glut.glutSolidCylinder(0.02, 0.01, 10, 10);
 
@@ -862,27 +1336,92 @@ public class RobotRace extends Base {
             }
         }
 
+        //Sets color scheme and material properties, depending on material chosen during object construction. A base,
+        //highlight and joint color are chosen depending on material, and assigned to different parts of the robot.
+        void setMaterialProperties() {
+            float[] baseColor = new float[3];
+            float[] highlightColor = new float[3];
+            float[] jointColor = new float[3];
 
+            switch (material) {
+                case GOLD:
+                    baseColor = new float[]{0.9f, 0.9f, 0.0f};
+                    highlightColor = new float[]{ 1.0f, 0.84f, 0.0f };
+                    jointColor = new float[]{ 0.94f, 0.90f, 0.54f };
+                    break;
+                case SILVER:
+                    baseColor = new float[]{0.75f, 0.75f, 0.75f};
+                    highlightColor = new float[]{ 0.83f, 0.83f, 0.83f };
+                    jointColor = new float[]{ 0.50f, 0.50f, 0.50f };
+                    break;
+                case WOOD:
+                    baseColor = new float[]{0.71f, 0.61f, 0.30f};
+                    highlightColor = new float[]{ 0.51f, 0.32f, 0.0f };
+                    jointColor = new float[]{ 0.34f, 0.18f, 0.05f };
+                    break;
+                case ORANGE: // Plastic
+                    baseColor = new float[]{1.0f, 0.65f, 0.0f};
+                    highlightColor = new float[]{ 1.0f, 0.55f, 0.0f };
+                    jointColor = new float[]{ 1.0f, 0.27f, 0.0f };
+                    break;
+            }
+
+            //Head colors
+            neckColor = jointColor;
+            headColor = baseColor;
+            //Torso colors
+            torsoColor = baseColor;
+            torsoScreenColor = highlightColor;
+            //Upper arm colors
+            armColor = baseColor;
+            elbowColor = jointColor;
+            //Lower arm colors
+            float[] lowerArmColor = { 0.2f, 0.2f, 0.2f };
+            float[] hexPartColor = { 0.1f, 0.1f, 0.1f };
+            //Hand colors
+            handCylinderColor = highlightColor;
+            //Claw colors
+            clawColor = baseColor;
+            //Upper leg colors
+            torsoJointColor = jointColor;
+            upperLegColor = baseColor;
+            //Lower leg colors
+            jointUpperLowerLegColor = jointColor;
+            lowerLegColor = baseColor;
+            footColor = highlightColor;
+
+            //Set lighting properties depending on chosen material.
+            gl.glMaterialfv(gl.GL_FRONT_AND_BACK, gl.GL_AMBIENT, material.ambient, 0);
+            gl.glMaterialfv(gl.GL_FRONT_AND_BACK, gl.GL_SPECULAR, material.specular, 0);
+            gl.glMaterialfv(gl.GL_FRONT_AND_BACK, gl.GL_DIFFUSE, material.diffuse, 0);
+            gl.glMaterialf(gl.GL_FRONT_AND_BACK, gl.GL_SHININESS, material.shininess);
+        }
 
         /**
          * Draws this robot (as a {@code stickfigure} if specified).
          */
         public void draw() {
-            gl.glPushMatrix();
-            gl.glColor3f(0, 0, 0);
 
+            setMaterialProperties();
+            gl.glPushMatrix();
+
+
+            // Start with drawing the torso (translated such that the completed robot will stand on top off the origin)
             gl.glTranslated(torsoTrans.x(), torsoTrans.y(), torsoTrans.z());
             drawTorso();
 
+            // Translate the head relative to the torso
             gl.glTranslated(neck.x(), neck.y(), neck.z());
             drawHead();
             gl.glTranslated(-neck.x(), -neck.y(), -neck.z());
 
+            // For the arms also apply a rotation
             gl.glPushMatrix();
             gl.glTranslated(rightShoulder.x(), rightShoulder.y(), rightShoulder.z());
             gl.glRotated(-20, 0, 1, 0);
             drawArm();
             gl.glPopMatrix();
+            // For the left arm mirror the right one
             gl.glPushMatrix();
             gl.glScaled(-1, 1, 1);
             gl.glTranslated(rightShoulder.x(), rightShoulder.y(), rightShoulder.z());
@@ -890,30 +1429,15 @@ public class RobotRace extends Base {
             drawArm();
             gl.glPopMatrix();
 
-            gl.glPushMatrix();
+            // draw the legs relative to the torso
             gl.glTranslated(rightHip.x(), rightHip.y(), rightHip.z());
-//            gl.glRotated(20, 0, 1, 0);/
             drawLeg();
-            gl.glPopMatrix();
-            gl.glPushMatrix();
+            gl.glTranslated(-2 * rightHip.x(), 0, 0);
+            // yet again the left limb is a mirror image of the right
             gl.glScaled(-1, 1, 1);
-            gl.glTranslated(rightHip.x(), rightHip.y(), rightHip.z());
-//            gl.glRotated(20, 0, 1, 0);
             drawLeg();
+
             gl.glPopMatrix();
-
-//
-//            gl.glScaled(-1, 1, 1);
-//            drawArm();
-
-
-//
-//            drawLegs();
-//
-//            drawArms();
-            gl.glPopMatrix();
-
-            // code goes here ...
         }
     }
     
@@ -967,17 +1491,17 @@ public class RobotRace extends Base {
         private void setDefaultMode() {
             center = gs.cnt;
 
+            //Calculate the X, Y and Z coordinates of eye using spherical coordinates.
             double eyeX, eyeY, eyeZ;
 
             eyeX = Math.cos(gs.theta) * Math.cos(gs.phi) *  gs.vDist;
             eyeY = Math.sin(gs.theta) * Math.cos(gs.phi) *  gs.vDist;
             eyeZ = Math.sin(gs.phi) * gs.vDist;
 
+            //Calculate the eyeDisplacement vector (which is a vector pointing from the centre point to the eye),
+            //and add it to centre point to obtain the eye position vector relative to origin.
             Vector eyeDisplacement = new Vector(eyeX, eyeY, eyeZ);
-
             eye = center.add(eyeDisplacement);
-
-            // code goes here ...
         }
         
         /**
