@@ -172,11 +172,13 @@ public class RobotRace extends Base {
         /*
          * Set the perspective:
          * Since the field of view angle must be such that the gs.vWidth vector fills the screen, we can calculate the
-         * angle of the field of view using arc-tangent and the distance to the centre point.
+         * angle of the field of view using arc-tangent and the distance to the centre point. Since the gluPerspective
+         * call takes the vertical fov angle, we use the aspect ratio to calculate the height of the line we have to see
+         * corresponding to a given gs.vWidth.
         */
 
-        double fovAngle = Math.toDegrees(2 * Math.atan(gs.vWidth / (2 * gs.vDist)));
-        glu.gluPerspective(fovAngle, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
+        double fovAngley = Math.toDegrees(2 * Math.atan(gs.vWidth * ((float)gs.h / (float)gs.w) / (2 * gs.vDist)));
+        glu.gluPerspective(fovAngley, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
 
         // Set camera.
         gl.glMatrixMode(GL_MODELVIEW);
