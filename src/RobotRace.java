@@ -1598,10 +1598,54 @@ public class RobotRace extends Base {
         /**
          * Draws this track, based on the selected track number.
          */
+
+        public void drawTopandBottom() {
+            double dt = 0.01;
+            double trackWidth = 4;
+            Vector centreToInnerNext = Vector.Z.cross(getTangent(0)).normalized();
+            Vector nextPoint = getPoint(0);
+            Vector innerRingPosNext = nextPoint.add(centreToInnerNext.scale(trackWidth / 2.0));
+            Vector outerRingPosNext = nextPoint.add(centreToInnerNext.scale(-trackWidth / 2.0));
+            for (double t = 0; t < 1; t = t + dt) {
+                Vector centreToInner = centreToInnerNext;
+                centreToInnerNext = Vector.Z.cross(getTangent(t+dt)).normalized();
+                Vector currentPoint = nextPoint;
+                nextPoint = getPoint(t+dt);
+
+                Vector innerRingPosCurrent = innerRingPosNext;
+                innerRingPosNext = nextPoint.add(centreToInnerNext.scale(trackWidth/2.0));
+                gl.glBegin(GL_TRIANGLE_STRIP);
+                for (double z = -1; z<1; z = z+0.1) {
+
+                    gl.glNormal3d(centreToInner.x(), centreToInner.y(), centreToInner.z());
+                    gl.glVertex3d(innerRingPosCurrent.x(),innerRingPosCurrent.y(),z);
+
+                    gl.glNormal3d(centreToInnerNext.x(),centreToInnerNext.y(),centreToInnerNext.z());
+                    gl.glVertex3d(innerRingPosNext.x(), innerRingPosNext.y(), z);
+                }
+                gl.glEnd();
+
+                Vector outerRingPosCurrent = outerRingPosNext;
+                outerRingPosNext = nextPoint.add(centreToInnerNext.scale(-trackWidth/2.0));
+                gl.glBegin(GL_TRIANGLE_STRIP);
+                for (double z = -1; z<1; z = z+0.1) {
+
+                    gl.glNormal3d(-centreToInner.x(),-centreToInner.y(),-centreToInner.z());
+                    gl.glVertex3d(outerRingPosCurrent.x(),outerRingPosCurrent.y(),z);
+
+                    gl.glNormal3d(-centreToInnerNext.x(),-centreToInnerNext.y(),-centreToInnerNext.z());
+                    gl.glVertex3d(outerRingPosNext.x(), outerRingPosNext.y(), z);
+                }
+                gl.glEnd();
+            }
+
+        }
+
         public void draw(int trackNr) {
             
             // The test track is selected
             if (0 == trackNr) {
+                drawTopandBottom();
                 gl.glTranslated(0, 0, 1);
                 drawSimpleTop(true);
                 gl.glTranslated(0, 0, -2);
@@ -1634,7 +1678,7 @@ public class RobotRace extends Base {
             double x = cosRadius * Math.cos(Math.PI * 2 * t);
             double y = sinRadius * Math.sin(Math.PI * 2 * t);
 
-            return new Vector(x, y, 1); // <- code goes here
+            return new Vector(x, y, 0); // <- code goes here
         }
         
         /**
