@@ -1,0 +1,12 @@
+Taakverdeling
+
+Racetrack 15
+Moving Camera 20
+Walking Robots 30
+Textured Robots 10
+
+
+
+Spline Track 30
+Terrain 30 
+Textured Tracks 30
