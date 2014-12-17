@@ -76,37 +76,38 @@ public class RobotRace extends Base {
     
     /** Instance of the terrain. */
     private final Terrain terrain;
+
+    /** Keep track of last time the scene was drawn. */
+    private long lastTimeSceneDrawn;
+
+    private long startTimeDrawing;
     
     /**
      * Constructs this robot race by initializing robots,
      * camera, track, and terrain.
      */
     public RobotRace() {
+        // Initialize the race track as the basic oval track and set lanes to 4.
+        raceTrack = new RaceTrack(0, 4);
 
         // Create a new array of four robots
         robots = new Robot[4];
 
-        // Initialize robot 0
-        robots[0] = new Robot(Material.GOLD
-            /* add other parameters that characterize this robot */);
+        // Initialize robot 0, telling it material (from which it takes its color), on which track it is and in which
+        // lane on the track.
+        robots[0] = new Robot(Material.GOLD, raceTrack, 0);
 
         // Initialize robot 1
-        robots[1] = new Robot(Material.SILVER
-            /* add other parameters that characterize this robot */);
+        robots[1] = new Robot(Material.SILVER, raceTrack, 1);
 
         // Initialize robot 2
-        robots[2] = new Robot(Material.WOOD
-            /* add other parameters that characterize this robot */);
+        robots[2] = new Robot(Material.WOOD, raceTrack, 2);
 
         // Initialize robot 3
-        robots[3] = new Robot(Material.ORANGE
-            /* add other parameters that characterize this robot */);
+        robots[3] = new Robot(Material.ORANGE, raceTrack, 3);
 
         // Initialize the camera
         camera = new Camera();
-
-        // Initialize the race track
-        raceTrack = new RaceTrack();
 
         // Initialize the terrain
         terrain = new Terrain();
@@ -155,6 +156,8 @@ public class RobotRace extends Base {
         brick = loadTexture("brick.jpg");
         head = loadTexture("head.jpg");
         torso = loadTexture("torso.jpg");
+
+        startTimeDrawing = System.nanoTime();
     }
     
     /**
@@ -212,6 +215,12 @@ public class RobotRace extends Base {
      */
     @Override
     public void drawScene() {
+        long currentTime = System.nanoTime();
+        // TODO: might be useful, but not used for now
+        long diffTimeFrames = currentTime - lastTimeSceneDrawn;
+
+        lastTimeSceneDrawn = currentTime;
+
         // Background color.
         gl.glClearColor(1f, 1f, 1f, 0f);
 
@@ -233,21 +242,26 @@ public class RobotRace extends Base {
 
         gl.glColor3f(0f, 0f, 0f);
 
-        // Draw the first robot
-        robots[0].draw();
+        // Draw the 4 robots.
+        for (int i = 0; i < 4; i++) {
+//            robots[i].incTime(diffTimeFrames);
+            robots[i].drawAtPos(diffTimeFrames);
+//            Vector pos = robots[i].track.getPositionOnLane(0.01 * i, i);
+//            Vector tangent = robots[i].track.getTangent(0.01 * i);
+//            Vector normal = robots[i].track.getNormal(0.01 * i);
+//
+//            gl.glPushMatrix();
+//
+//            translate(pos);
+//            rotate(normal.cross(tangent), tangent, normal);
+//            robots[i].draw();
+//
+//            gl.glPopMatrix();
 
-        // Draw the a another three robots
-        gl.glTranslated(1.5f, 0, 0);
-        robots[1].draw();
-
-        gl.glTranslated(1.5f, 0, 0);
-        robots[2].draw();
-
-        gl.glTranslated(1.5f, 0, 0);
-        robots[3].draw();
+        }
 
         // Draw race track
-        raceTrack.draw(gs.trackNr);
+        raceTrack.draw();
         
         // Draw terrain
         terrain.draw();
@@ -405,6 +419,27 @@ public class RobotRace extends Base {
         gl.glTranslated(tr.x(), tr.y(), tr.z());
     }
 
+    // convenience method to rotate the axis system to new orthonormal system specified by basis{X,Y,Z}.
+    private void rotate(Vector basisX, Vector basisY, Vector basisZ) {
+        // Specify the rotation matrix in row Major order.
+        double[] rotMatrix = { basisX.x(), basisX.y(), basisX.z(), 0,
+                               basisY.x(), basisY.y(), basisY.z(), 0,
+                               basisZ.x(), basisZ.y(), basisZ.z(), 0,
+                               0,          0,          0,          1 };
+
+        gl.glMultMatrixd(rotMatrix, 0);
+    }
+
+    // convenience method to rotate the axis system from a orthonormal system specified by basis{X,Y,Z}.
+    private void undoRotate(Vector basisX, Vector basisY, Vector basisZ) {
+        double[] rotMatrix = { basisX.x(), basisY.x(), basisZ.x(), 0,
+                               basisX.y(), basisY.y(), basisZ.y(), 0,
+                               basisX.z(), basisY.z(), basisZ.z(), 0,
+                               0,          0,          0,          1 };
+
+        gl.glMultMatrixd(rotMatrix, 0);
+    }
+
     // Method to calculate and set the normal for a face defined by 3 vertices
     private void makeFaceVertex3(double v1x, double v1y, double v1z,
                                  double v2x, double v2y, double v2z,
@@ -448,6 +483,13 @@ public class RobotRace extends Base {
      * Represents a Robot, to be implemented according to the Assignments.
      */
     private class Robot {
+        // Keep a reference to the track the robot is on.
+        private RaceTrack track;
+        // Maintain in which lane the robot is running.
+        private int trackLane;
+
+        private long startTime = System.nanoTime();
+
         double stickSphereRadius = 0.033f;
 
         // Translation for to position the center of the robot on top of the xy-plane
@@ -507,8 +549,34 @@ public class RobotRace extends Base {
         /**
          * Constructs the robot with initial parameters.
          */
-        public Robot(Material material) {
+        public Robot(Material material, RaceTrack track, int trackLane) {
             this.material = material;
+            this.track = track;
+            this.trackLane = trackLane;
+        }
+
+        public void incTime(long timeDiff) {
+            // TODO: move according to time difference.
+        }
+
+        public void drawAtPos(long timeDiff) {
+            double sinceStart = System.nanoTime() - startTime;
+
+            double t = (1 / (15 * 10e9)) * (sinceStart % (15 * 10e9));
+            // FIXME: hack to show diffent speeds
+            t *= (trackLane + 1);
+
+            Vector pos = track.getPositionOnLane(t, trackLane);
+            Vector tangent = track.getTangent(t);
+            Vector normal = track.getNormal(t);
+
+            gl.glPushMatrix();
+
+            translate(pos);
+            rotate(normal.cross(tangent), tangent, normal);
+            draw();
+
+            gl.glPopMatrix();
         }
 
         //Method that draws head model. This method assumes that (0,0,0) coordinate is the joint connecting the head
@@ -1536,10 +1604,18 @@ public class RobotRace extends Base {
      * Implementation of a race track that is made from Bezier segments.
      */
     private class RaceTrack {
-        double cosRadius = 10;
-        double sinRadius = 14;
+        // Dimension of the basic oval track specified in the assignment.
+        final double ovalTrackCosRadius = 10;
+        final double ovalTrackSinRadius = 14;
         double trackWidth = 4;
-        
+        double trackHeight = 2;
+
+        /** Keep track of which track this instance is to draw. */
+        private int trackNr;
+
+        /** Maintain number of available lanes to walk on. */
+        private int trackLanes;
+
         /** Array with control points for the O-track. */
         private Vector[] controlPointsOTrack;
         
@@ -1555,8 +1631,15 @@ public class RobotRace extends Base {
         /**
          * Constructs the race track, sets up display lists.
          */
-        public RaceTrack() {
-            // code goes here ...
+        public RaceTrack(int trackNr, int trackLanes) {
+            this.trackNr = trackNr;
+            this.trackLanes = trackLanes;
+        }
+
+        // Specify (after instantiation) which of the tracks to use. TRACKNR specifies tracks from 0 to TODO: max track nr.
+        public void setTrackNr(int trackNr) {
+            // TODO: when adding display_list clear them when changing track nrs.
+            this.trackNr = trackNr;
         }
 
         void drawSimpleTop(boolean normalUp) {
@@ -1643,7 +1726,7 @@ public class RobotRace extends Base {
 
         }
 
-        public void draw(int trackNr) {
+        public void draw() {
             
             // The test track is selected
             if (0 == trackNr) {
@@ -1677,22 +1760,127 @@ public class RobotRace extends Base {
          * Returns the position of the curve at 0 <= {@code t} <= 1.
          */
         public Vector getPoint(double t) {
-            double x = cosRadius * Math.cos(Math.PI * 2 * t);
-            double y = sinRadius * Math.sin(Math.PI * 2 * t);
+            if (0 == trackNr) {
+                // A basic 2D (z=0) outline of oval shape.
+                double x = ovalTrackCosRadius * Math.cos(Math.PI * 2 * t);
+                double y = ovalTrackSinRadius * Math.sin(Math.PI * 2 * t);
 
-            return new Vector(x, y, 0); // <- code goes here
+                return new Vector(x, y, 0);
+            } else if (1 == trackNr) {
+                // code goes here ...
+
+                // The L-track is selected
+            } else if (2 == trackNr) {
+                // code goes here ...
+
+                // The C-track is selected
+            } else if (3 == trackNr) {
+                // code goes here ...
+
+                // The custom track is selected
+            } else if (4 == trackNr) {
+                // code goes here ...
+
+            }
+
+            return null; // As long as the invariant 0 <= trackNr <= 4 holds, this is unreachable.  TODO: set proper max track nr
+        }
+
+        /**
+         * Calculate the point at the center of a walkable lane.
+         *
+         * @param laneNr number of the lane. Must be non-negative and smaller than this.trackLanes.
+         * @return Point of center of the lane
+         */
+        public Vector getPositionOnLane(double t, int laneNr) {
+            assert 0 <= laneNr && laneNr < trackLanes;
+
+            // If (single track || middle track of uneven number of tracks) {
+            if (trackLanes == 1 || ((trackLanes % 2 == 1) && laneNr == (trackLanes + 1) / 2)) {
+                // This lane is centered on the track, getPoint already returns the center of the track.
+                return getPoint(t);
+            }
+
+            // By taking the cross product of the tangent and the normal we get a vector along the surface from
+            // the center of the track toward the outer bound of it.
+            // No need to normalize, the tangent and normal are orthogonal and unit length.
+            Vector normal = getNormal(t);
+            Vector alongSurface = getTangent(t).cross(normal);
+
+            double halfLaneWidth = trackWidth / (2 * trackLanes);
+            double halfLanesFromCenter;
+            if (laneNr < (trackLanes / 2)) {
+                // we need an inner lane thus the vector must be reversed to point inward.
+                alongSurface = alongSurface.scale((-1));
+
+                halfLanesFromCenter = trackLanes - laneNr * 2 - 1;
+            } else {
+                halfLanesFromCenter = laneNr * 2 - trackLanes + 1;
+            }
+
+            // Get the center point add the displacement along the width and add displacement along the height of the track.
+            return getPoint(t).add(alongSurface.scale(halfLaneWidth * halfLanesFromCenter))
+                              .add(normal.scale(trackHeight / 2));
         }
         
         /**
-         * Returns the tangent of the curve at 0 <= {@code t} <= 1.
+         * Returns the normalized tangent of the curve at 0 <= {@code t} <= 1.
          */
         public Vector getTangent(double t) {
-            double x = -2 * Math.PI * cosRadius * Math.sin(2 * Math.PI * t);
-            double y = 2 * Math.PI * sinRadius * Math.cos(2 * Math.PI * t);
+            if (0 == trackNr) {
+                // A tangent to a 2D outline of oval shape. The below functions are obtained by taking
+                // dx/dt and dy/dt of the function in getPoint.
+                double x = -2 * Math.PI * ovalTrackCosRadius * Math.sin(2 * Math.PI * t);
+                double y = 2 * Math.PI * ovalTrackSinRadius * Math.cos(2 * Math.PI * t);
 
-            return new Vector(x, y, 0);
+                return new Vector(x, y, 0).normalized();
+            } else if (1 == trackNr) {
+                // code goes here ...
+
+                // The L-track is selected
+            } else if (2 == trackNr) {
+                // code goes here ...
+
+                // The C-track is selected
+            } else if (3 == trackNr) {
+                // code goes here ...
+
+                // The custom track is selected
+            } else if (4 == trackNr) {
+                // code goes here ...
+
+            }
+
+            return null; // As long as the invariant 0 <= trackNr <= 4 holds, this is unreachable.  TODO: set proper max track nr
         }
-        
+
+        /**
+         * Returns the (normalized) normal to the current track.
+         */
+        public Vector getNormal(double t) {
+            if (0 == trackNr) {
+                // The surface of the basic oval track is always coplanar with the XOY plane therefore the normal is
+                // along the z-axis.
+                return Vector.Z;
+            } else if (1 == trackNr) {
+                // code goes here ...
+
+                // The L-track is selected
+            } else if (2 == trackNr) {
+                // code goes here ...
+
+                // The C-track is selected
+            } else if (3 == trackNr) {
+                // code goes here ...
+
+                // The custom track is selected
+            } else if (4 == trackNr) {
+                // code goes here ...
+
+            }
+
+            return null; // As long as the invariant 0 <= trackNr <= 4 holds, this is unreachable.  TODO: set proper max track nr
+        }
     }
     
     /**
