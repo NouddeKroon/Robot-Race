@@ -16,6 +16,7 @@ class RaceTrack {
     final double ovalTrackSinRadius = 14;
     double trackWidth = 4;
     double trackHeight = 2;
+    int displayList;
 
     /** Keep track of which track this instance is to draw. */
     private int trackNr;
@@ -50,51 +51,14 @@ class RaceTrack {
         this.trackNr = trackNr;
     }
 
-    void drawSimpleTop(GL2 gl, boolean normalUp) {
-        final double dt = 0.01;
-        final double dw = 0.25;
-        final double widthFromCenter = 0.5 * trackWidth;
-
-        // normal along Z
-        gl.glNormal3d(0, 0, normalUp ? 1 : -1);
-
-        Vector center = getPoint(0);
-        Vector prevToOrigin = Vector.Z.cross(getTangent(0)).normalized();
-        Vector prevInnerMost = center.add(prevToOrigin.scale(widthFromCenter));
-        for (double t = dt; t <= 1.0d + dt; t += dt) {
-            center = getPoint(t);
-            Vector toOrigin = Vector.Z.cross(getTangent(t)).normalized();
-            Vector innerMostPoint = center.add(toOrigin.scale(widthFromCenter));
-
-            gl.glBegin(gl.GL_TRIANGLE_STRIP);
-            for (double w = 0; w <= 1.0d; w += dw) {
-                Vector innerPoint0 = prevInnerMost.add(prevToOrigin.scale(-trackWidth * w));
-//                    Vector outerPoint0 = innerPoint0.add(toOrigin.scale(-dw));
-                Vector innerPoint1 = innerMostPoint.add(toOrigin.scale(-trackWidth * w));
-//                    Vector outerPoint1 = innerPoint1.add(toOrigin.scale(-dw));
-
-                gl.glVertex3d(innerPoint0.x(), innerPoint0.y(), innerPoint0.z());
-//                    gl.glVertex3d(outerPoint0.x(), outerPoint0.y(), outerPoint0.z());
-
-                gl.glVertex3d(innerPoint1.x(), innerPoint1.y(), innerPoint1.z());
-//                    gl.glVertex3d(outerPoint1.x(), outerPoint1.y(), outerPoint1.z());
-
-            }
-
-            gl.glEnd();
-
-            prevInnerMost = innerMostPoint;
-            prevToOrigin = toOrigin;
-        }
-    }
 
     /**
      * Draws this track, based on the selected track number.
      */
 
-    public void drawTopandBottom(GL2 gl) {
+    private void drawTestTrack(GL2 gl) {
         double dt = 0.01;
-        double trackWidth = 4;
+
         Vector centreToInnerNext = Vector.Z.cross(getTangent(0)).normalized();
         Vector nextPoint = getPoint(0);
         Vector innerRingPosNext = nextPoint.add(centreToInnerNext.scale(trackWidth / 2.0));
@@ -102,13 +66,14 @@ class RaceTrack {
         for (double t = 0; t < 1; t = t + dt) {
             Vector centreToInner = centreToInnerNext;
             centreToInnerNext = Vector.Z.cross(getTangent(t+dt)).normalized();
-            Vector currentPoint = nextPoint;
             nextPoint = getPoint(t+dt);
-
             Vector innerRingPosCurrent = innerRingPosNext;
             innerRingPosNext = nextPoint.add(centreToInnerNext.scale(trackWidth/2.0));
+            Vector outerRingPosCurrent = outerRingPosNext;
+            outerRingPosNext = nextPoint.add(centreToInnerNext.scale(-trackWidth/2.0));
+
             gl.glBegin(GL_TRIANGLE_STRIP);
-            for (double z = -1; z<1; z = z+0.1) {
+            for (double z = -1; z<=1; z = z+0.25) {
 
                 gl.glNormal3d(centreToInner.x(), centreToInner.y(), centreToInner.z());
                 gl.glVertex3d(innerRingPosCurrent.x(),innerRingPosCurrent.y(),z);
@@ -118,8 +83,6 @@ class RaceTrack {
             }
             gl.glEnd();
 
-            Vector outerRingPosCurrent = outerRingPosNext;
-            outerRingPosNext = nextPoint.add(centreToInnerNext.scale(-trackWidth/2.0));
             gl.glBegin(GL_TRIANGLE_STRIP);
             for (double z = -1; z<1; z = z+0.1) {
 
@@ -130,18 +93,49 @@ class RaceTrack {
                 gl.glVertex3d(outerRingPosNext.x(), outerRingPosNext.y(), z);
             }
             gl.glEnd();
+
+            gl.glNormal3d(0, 0, 1);
+            drawTestTrackSurface(innerRingPosCurrent, centreToInner, innerRingPosNext, centreToInnerNext, gl);
+
+            gl.glPushMatrix();
+            gl.glTranslated(0,0,-trackHeight);
+            gl.glNormal3d(0, 0, -1);
+            drawTestTrackSurface(innerRingPosCurrent, centreToInner, innerRingPosNext, centreToInnerNext, gl);
+            gl.glPopMatrix();
         }
 
     }
 
+    private void drawTestTrackSurface(Vector innerRingPosCurrent, Vector centreToInner,
+                                      Vector innerRingPosNext, Vector centreToInnerNext, GL2 gl) {
+        double dw = 0.25;
+        gl.glBegin(gl.GL_TRIANGLE_STRIP);
+        for (double w = 0; w <= 1.0d; w += dw) {
+            Vector innerPoint0 = innerRingPosCurrent.add(centreToInner.scale(-trackWidth * w));
+            Vector innerPoint1  = innerRingPosNext.add(centreToInnerNext.scale(-trackWidth * w));
+            gl.glVertex3d(innerPoint0.x(), innerPoint0.y(), innerPoint0.z());
+            gl.glVertex3d(innerPoint1.x(), innerPoint1.y(), innerPoint1.z());
+        }
+        gl.glEnd();
+    }
+
+    
+
     public void draw(GL2 gl) {
         // The test track is selected
         if (0 == trackNr) {
-            drawTopandBottom(gl);
-            gl.glTranslated(0, 0, 1);
-            drawSimpleTop(gl, true);
-            gl.glTranslated(0, 0, -2);
-            drawSimpleTop(gl, false);
+            if (displayList == 0) {
+                displayList = gl.glGenLists(1);
+                gl.glNewList(displayList, GL2.GL_COMPILE);
+                drawTestTrack(gl);
+//                gl.glTranslated(0, 0, 1);
+//                drawSimpleTop(gl, true);
+//                gl.glTranslated(0, 0, -2);
+//                drawSimpleTop(gl, false);
+                gl.glEndList();
+                } else {
+                gl.glCallList(displayList);
+            }
             // code goes here ...
 
             // The O-track is selected
@@ -172,7 +166,7 @@ class RaceTrack {
             double x = ovalTrackCosRadius * Math.cos(Math.PI * 2 * t);
             double y = ovalTrackSinRadius * Math.sin(Math.PI * 2 * t);
 
-            return new Vector(x, y, 0);
+            return new Vector(x, y, 1);
         } else if (1 == trackNr) {
             // code goes here ...
 
@@ -226,8 +220,7 @@ class RaceTrack {
         }
 
         // Get the center point add the displacement along the width and add displacement along the height of the track.
-        return getPoint(t).add(alongSurface.scale(halfLaneWidth * halfLanesFromCenter))
-                .add(normal.scale(trackHeight / 2));
+        return getPoint(t).add(alongSurface.scale(halfLaneWidth * halfLanesFromCenter));
     }
 
     /**
