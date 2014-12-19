@@ -117,8 +117,8 @@ class Robot {
                 double headDepth = 0.25;
                 double neckSize = 0.10;
                 double eyeRadius=0.12;
-                double eyeDepth = 0.02;
-                double irisDepth = 0.01;
+                double eyeDepth = 0.05;
+                double irisDepth = 0.03;
                 double antennaSize = 0.1;
                 double neckAngle = 10;
 
@@ -219,7 +219,7 @@ class Robot {
                         //Draw mouth
                         gl.glPushMatrix();              //Push a new matrix to store current position.
                         gl.glColor3f(mouthColor[0], mouthColor[1], mouthColor[2]);          //Set color to mouth color.
-                        gl.glTranslated(0, headDepth + 0.005, 0.5 * neckSize + 0.3 * headHeight);   //Translate to mouth position.
+                        gl.glTranslated(0, headDepth + 0.015, 0.5 * neckSize + 0.3 * headHeight);   //Translate to mouth position.
 
                         //The mouth is a polygon of which the top side is a straight line, and the bottom side are points on a circle.
                         gl.glBegin(GL_POLYGON);             //Begin drawing a polygon.
@@ -544,20 +544,20 @@ class Robot {
                         // position the claw such that it clips the the cylinder
                         gl.glPushMatrix();
                         gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
-                        drawClaw(gl, glut);
+                        drawClaw(gl);
                         gl.glPopMatrix();
 
                         // Draw another two claws each angled 120 degrees from one another
                         gl.glPushMatrix();
                         gl.glRotated(120, 0, 0, 1);
                         gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
-                        drawClaw(gl, glut);
+                        drawClaw(gl);
                         gl.glPopMatrix();
 
                         gl.glPushMatrix();
                         gl.glRotated(240, 0, 0, 1);
                         gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
-                        drawClaw(gl, glut);
+                        drawClaw(gl);
                         gl.glPopMatrix();
 
                         gl.glPopMatrix();
@@ -565,7 +565,7 @@ class Robot {
         }
 
         // The claw is drawn centered on the y-z plane on the side of the negative x-axis and down from the origin along the z-axis
-        private void drawClaw(GL2 gl, GLUT glut) {
+        private void drawClaw(GL2 gl) {
                 double depth = 0.025;
                 // the claw is composed of several circular segments, draw each of the segments according to the following
                 // specifications and line the up to make more complex curved claw
@@ -594,7 +594,7 @@ class Robot {
                                 gl.glTranslated(radii[angle_idx - 1] - radii[angle_idx], 0, 0);
                         }
 
-                        gl.glBegin(gl.GL_QUADS);
+                        gl.glBegin(GL_QUADS);
 
                         // Split up the angle into 2 degree pieces and draw quads to realize the curvature
                         for (int i = 0; i < angles[angle_idx]; i += 2) {
@@ -640,7 +640,7 @@ class Robot {
                 }
 
                 // close off the claw. The last coordinates in vertices are coordinates for the final piece of the final segment
-                gl.glBegin(gl.GL_QUADS);
+                gl.glBegin(GL_QUADS);
                 Util.makeFaceVertex4(gl, vertices[2][0], -depth, vertices[2][1],
                         vertices[3][0], -depth, vertices[3][1],
                         vertices[3][0], depth, vertices[3][1],
@@ -780,7 +780,7 @@ class Robot {
                         gl.glEnd();
 
                         gl.glTranslated(0,-0.5*lowerLegWidth,0);        //Translate to centre of leg.
-                        drawFoot(gl, glut);                                     //Draw foot.
+                        drawFoot(gl);                                     //Draw foot.
                         gl.glPopMatrix();                               //Return to previous matrix.
 
                 }
@@ -793,7 +793,7 @@ class Robot {
          * makeFaceVertex method to draw the quads, which does the normal for us, as long as we define the vertices in
          * clockwise fashion.
         */
-        private void drawFoot(GL2 gl, GLUT glut) {
+        private void drawFoot(GL2 gl) {
                 double width = 0.2;
 
                 gl.glColor3f(footColor[0],footColor[1],footColor[2]);        //Set color to foot color.
@@ -835,7 +835,7 @@ class Robot {
         }
 
         // Draw a simple angular shoulder centered round the origin with an offset to line up with the shoulder joint of the torso.
-        private void drawShoulder(GL2 gl, GLUT glut) {
+        private void drawShoulder(GL2 gl) {
                 {
                         gl.glBegin(gl.GL_TRIANGLES);
                         // front face
@@ -896,13 +896,13 @@ class Robot {
 
                         // draw the right shoulder
                         Util.translate(gl, rightShoulder);
-                        drawShoulder(gl, glut);
+                        drawShoulder(gl);
                         Util.translate(gl, rightShoulder.scale(-1));
 
                         // draw the left shoulder. The same as the right shoulder only now mirrored
                         Util.translate(gl, leftShoulder);
                         gl.glScaled(-1, 1, 1);
-                        drawShoulder(gl, glut);
+                        drawShoulder(gl);
                         gl.glScaled(-1, 1, 1);
                         Util.translate(gl, leftShoulder.scale(-1));
 
