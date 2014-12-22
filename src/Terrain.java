@@ -14,8 +14,9 @@ class Terrain {
 
     /**
      * Draws the terrain.
+     * @param gl
      */
-    public void draw() {
+    public void draw(GL2 gl) {
         // code goes here ...
     }
 

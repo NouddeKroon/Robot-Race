@@ -17,6 +17,9 @@ class Robot {
         // Maintain in which lane the robot is running.
         private int trackLane;
 
+        //Maintain which track is currently selected.
+        private int trackNr;
+
         private long startTime = System.nanoTime();
 
         double stickSphereRadius = 0.033f;
@@ -90,15 +93,21 @@ class Robot {
         }
 
         public void drawAtPos(GL2 gl, GLUT glut, long timeDiff) {
+                //If a new track is selected, reset the start time so the robots start back at the start line.
+                if (this.trackNr != track.trackNr) {
+                        startTime = System.nanoTime();
+                        this.trackNr = gs.trackNr;
+                }
+
                 double sinceStart = System.nanoTime() - startTime;
 
-                double t = (1 / (15 * 10e9)) * (sinceStart % (15 * 10e9));
-                // FIXME: hack to show diffent speeds
-                t *= (trackLane + 1);
+                double t = (1 / (15 * 10e9)) * (sinceStart);
+                // FIXME: hack to show diffent speeds, replace by calculating distance traveled.
+                double s = t * 70*((5 - trackLane) + 1);
 
-                Vector pos = track.getPositionOnLane(t, trackLane);
-                Vector tangent = track.getTangent(t);
-                Vector normal = track.getNormal(t);
+                Vector pos = track.getPositionOnLane(s, trackLane);
+                Vector tangent = track.getTangent(s,trackLane);
+                Vector normal = track.getNormal(s, trackLane);
 
                 gl.glPushMatrix();
 

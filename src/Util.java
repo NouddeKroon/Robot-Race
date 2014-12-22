@@ -86,4 +86,34 @@ class Util {
 
         gl.glVertex3d(v4x, v4y, v4z);
     }
+
+    // Method to return a point on a Bezier curve.
+    static public Vector getCubicBezierPnt (double t, Vector P0, Vector P1, Vector P2, Vector P3) {
+
+        //Calculate the individual contributions of the 3 control points.
+        Vector p0Contribution = P0.scale(Math.pow(1-t,3));
+        Vector p1Contribution = P1.scale(3*t*Math.pow(1-t,2));
+        Vector p2Contribution = P2.scale(3*(1-t)*Math.pow(t,2));
+        Vector p3Contribution = P3.scale(Math.pow(t,3));
+
+        //Add the all the contributions together and return the result.
+        return p0Contribution.add(p1Contribution.add(p2Contribution.add(p3Contribution)));
+    }
+
+    //Method to return the derivative of a point on a Bezier curve.
+    static public Vector getCubicBezierTng (double t, Vector P0, Vector P1, Vector P2, Vector P3) {
+
+        //The tangent of the cubic Bezier curve has 3 individual vector contributions, calculate these:
+        Vector contribution1 = P1.subtract(P0);
+        contribution1 = contribution1.scale(3*Math.pow((1 - t), 2));
+
+        Vector contribution2 = P2.subtract(P1);
+        contribution2 = contribution2.scale(6*t*(1-t));
+
+        Vector contribution3 = P3.subtract(P2);
+        contribution3 = contribution3.scale(3*Math.pow(t,2));
+
+        //Add the all the contributions together and return the result.
+        return contribution1.add(contribution2.add(contribution3));
+    }
 }

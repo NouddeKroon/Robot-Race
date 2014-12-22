@@ -7,10 +7,8 @@
  */
 
 import static javax.media.opengl.GL2.*;
-import javax.media.opengl.GL2;
-import com.jogamp.opengl.util.gl2.GLUT;
+
 import robotrace.Base;
-import robotrace.Vector;
 
 /**
  * Handles all of the RobotRace graphics functionality,
@@ -90,7 +88,7 @@ public class RobotRace extends Base {
      */
     public RobotRace() {
         // Initialize the race track as the basic oval track and set lanes to 4.
-        raceTrack = new RaceTrack(0, 4, gs);
+        raceTrack = new RaceTrack(0, gs);
 
         // Create a new array of four robots
         robots = new Robot[4];
@@ -244,6 +242,9 @@ public class RobotRace extends Base {
 
         gl.glColor3f(0f, 0f, 0f);
 
+        // Draw race track
+        raceTrack.draw(gl);
+
         // Draw the 4 robots.
         for (int i = 0; i < 4; i++) {
 //            robots[i].incTime(diffTimeFrames);
@@ -262,11 +263,10 @@ public class RobotRace extends Base {
 
         }
 
-        // Draw race track
-        raceTrack.draw(gl);
+
         
         // Draw terrain
-        terrain.draw();
+        terrain.draw(gl);
     }
 
     /**
