@@ -23,10 +23,10 @@ class Robot {
     //Maintain which track is currently selected.
     private int trackNr;
 
-    private double speed = 10 + 2 * (new Random().nextDouble() - 0.5); // m/s
-    private double inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
+    double speed = 10 + 2 * (new Random().nextDouble() - 0.5); // m/s
+    double inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
 
-    private double distCovered = 0; // in meters
+    double distCovered = 0; // in meters
 
     Vector pos = Vector.O;
     Vector tangent = Vector.O;

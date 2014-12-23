@@ -48,12 +48,24 @@ class Camera {
 
         camMode = mode;
 
+        transitionTime = -1;
+        timeElapsed = 0;
+
         if (camMode == 1) {
             point = new HelicopterRobotPoint(robots[robotIdx]);
-//            point = new Transition(new HelicopterRobotPoint(robots[0]), new HelicopterRobotPoint(robots[3]), 2 * 10e9);
-            timeElapsed = 0;
         } else if (camMode == 2) {
             point = new MotorcycleRobotPoint(robots[robotIdx]);
+        } else if (camMode == 3) {
+            double minDist = Double.MAX_VALUE;
+
+            for (int idx = 0; idx < robots.length; idx++) {
+                if (robots[idx].distCovered < minDist) {
+                    minDist = robots[idx].distCovered;
+                    robotIdx = idx;
+                }
+            }
+
+            point = new FirstPersonRobotPoint(robots[robotIdx]);
         } else {
             point = new DefaultPoint(gs);
         }
@@ -85,6 +97,7 @@ class Camera {
             point = new Transition(point, transitionTarget, transitionTime);
             timeElapsed = 0;
         }
+
         center = point.getCenterPoint(timeElapsed);
         eye = point.getEyePoint(timeElapsed);
         up = point.getUp(timeElapsed);
@@ -171,6 +184,29 @@ class MotorcycleRobotPoint extends Point {
         return robot.pos.add(robot.tangent.scale(-1))
                         .add(robot.tangent.cross(robot.normal))
                         .add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
+    }
+
+    public Vector getUp(double t) {
+        return robot.normal;
+    }
+}
+
+class FirstPersonRobotPoint extends Point {
+    private Robot robot;
+
+    FirstPersonRobotPoint(Robot robot) {
+        this.robot = robot;
+    }
+
+    public Vector getCenterPoint(double t) {
+        return robot.pos.add(robot.tangent.scale(5))
+                .add(new Vector(0, 0, 1));  //FIXME: hack for robot height
+    }
+
+    public Vector getEyePoint(double t) {
+        return robot.pos.add(robot.tangent.scale(0.1))
+                .add(new Vector(0, 0, 1.80));  //FIXME: hack for robot height
+//        return robot.pos.add(new Vector(0, 0, 1.80));  //FIXME: hack for robot height
     }
 
     public Vector getUp(double t) {

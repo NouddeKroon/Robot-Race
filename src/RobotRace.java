@@ -227,7 +227,6 @@ public class RobotRace extends Base {
     @Override
     public void drawScene() {
         long currentTime = System.nanoTime();
-        // TODO: might be useful, but not used for now
         long diffTimeFrames = currentTime - lastTimeSceneDrawn;
 
         camera.setCamMode(gs.camMode);
@@ -261,22 +260,8 @@ public class RobotRace extends Base {
 
         // Draw the 4 robots.
         for (int i = 0; i < 4; i++) {
-//            robots[i].incTime(diffTimeFrames);
             robots[i].drawAtPos(gl, glut, diffTimeFrames);
-//            Vector pos = robots[i].track.getPositionOnLane(0.01 * i, i);
-//            Vector tangent = robots[i].track.getTangent(0.01 * i);
-//            Vector normal = robots[i].track.getNormal(0.01 * i);
-//
-//            gl.glPushMatrix();
-//
-//            translate(pos);
-//            rotate(normal.cross(tangent), tangent, normal);
-//            robots[i].draw();
-//
-//            gl.glPopMatrix();
-
         }
-
 
         // Draw terrain
         terrain.draw(gl);
