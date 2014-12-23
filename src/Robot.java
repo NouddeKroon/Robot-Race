@@ -4,6 +4,8 @@ import robotrace.Vector;
 
 import javax.media.opengl.GL2;
 
+import java.util.Random;
+
 import static javax.media.opengl.GL.GL_TRIANGLES;
 import static javax.media.opengl.GL2.GL_POLYGON;
 import static javax.media.opengl.GL2GL3.GL_QUADS;
@@ -21,7 +23,9 @@ class Robot {
     //Maintain which track is currently selected.
     private int trackNr;
 
-    private double speed = 10; // m/s
+    private double speed = 10 + 2 * (new Random().nextDouble() - 0.5); // m/s
+    private double inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
+
     private double distCovered = 0; // in meters
 
     double stickSphereRadius = 0.033f;
@@ -97,18 +101,33 @@ class Robot {
     }
 
     public void drawAtPos(GL2 gl, GLUT glut, long timeDiff) {
-        //If a new track is selected, reset the start time so the robots start back at the start line.
+        //If a new track is selected, reset the start distance so the robots start back at the start line.
         if (this.trackNr != track.trackNr) {
             this.distCovered = 0;
             this.trackNr = gs.trackNr;
         }
 
-        double dist = (timeDiff / 10e9) * speed;
+        // Get the previous tangent to calculate the incline
+        Vector tangent = track.getTangent(distCovered, trackLane);
+
+        // Calculate an incline factor by dividing the angle between the tangent and the projection of the tangent on
+        // the XOY plane by PI / 2. The z coord will specify whether we are moving up an incline or down.
+        // The final value of inclination will be in [-1, 1], from straight down to straight up.
+        Vector projectedTangent = new Vector(tangent.x(), tangent.y(), 0).normalized();
+
+        double posNegIncline = tangent.z() >= 0 ? 1 : -1;
+        double inclination = posNegIncline * Math.asin(tangent.cross(projectedTangent).length()) / (0.5 * Math.PI);
+
+        double dist = (timeDiff / 10e9) * (1 + (-1) * inclinationFactor * inclination) * speed;
+//        double dist = (timeDiff / 10e9) * speed;
         distCovered += dist;
 
+        System.out.println("inc: " + inclination + " dist: " + dist + " speed: " + (1 + (-1) * inclinationFactor * inclination) * speed);
+
         Vector pos = track.getPositionOnLane(distCovered, trackLane);
-        Vector tangent = track.getTangent(distCovered, trackLane);
+        tangent = track.getTangent(distCovered, trackLane);
         Vector normal = track.getNormal(distCovered, trackLane);
+
 
         gl.glPushMatrix();
 
