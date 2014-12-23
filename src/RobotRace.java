@@ -78,10 +78,10 @@ public class RobotRace extends Base {
     private final Terrain terrain;
 
     /** Keep track of last time the scene was drawn. */
-    private long lastTimeSceneDrawn;
+    private long lastTimeSceneDrawn = 0;
 
-    private long startTimeDrawing;
-    
+//    private long startTimeDrawing = 0;
+
     /**
      * Constructs this robot race by initializing robots,
      * camera, track, and terrain.
@@ -157,7 +157,8 @@ public class RobotRace extends Base {
         head = loadTexture("head.jpg");
         torso = loadTexture("torso.jpg");
 
-        startTimeDrawing = System.nanoTime();
+//        startTimeDrawing = System.nanoTime();
+        lastTimeSceneDrawn = System.nanoTime();
     }
     
     /**

@@ -5,6 +5,8 @@ import robotrace.Vector;
 import static javax.media.opengl.GL.GL_TRIANGLES;
 import static javax.media.opengl.GL2.GL_POLYGON;
 import static javax.media.opengl.GL2GL3.GL_QUADS;
+
+import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 
 /**
@@ -20,7 +22,8 @@ class Robot {
         //Maintain which track is currently selected.
         private int trackNr;
 
-        private long startTime = System.nanoTime();
+        private double speed = 10; // m/s
+        private double distCovered = 0; // in meters
 
         double stickSphereRadius = 0.033f;
 
@@ -95,19 +98,16 @@ class Robot {
         public void drawAtPos(GL2 gl, GLUT glut, long timeDiff) {
                 //If a new track is selected, reset the start time so the robots start back at the start line.
                 if (this.trackNr != track.trackNr) {
-                        startTime = System.nanoTime();
+                        this.distCovered = 0;
                         this.trackNr = gs.trackNr;
                 }
 
-                double sinceStart = System.nanoTime() - startTime;
+                double dist = (timeDiff / 10e9) * speed;
+                distCovered += dist;
 
-                double t = (1 / (15 * 10e9)) * (sinceStart);
-                // FIXME: hack to show diffent speeds, replace by calculating distance traveled.
-                double s = t * 70*((5 - trackLane) + 1);
-
-                Vector pos = track.getPositionOnLane(s, trackLane);
-                Vector tangent = track.getTangent(s,trackLane);
-                Vector normal = track.getNormal(s, trackLane);
+                Vector pos = track.getPositionOnLane(distCovered, trackLane);
+                Vector tangent = track.getTangent(distCovered,trackLane);
+                Vector normal = track.getNormal(distCovered, trackLane);
 
                 gl.glPushMatrix();
 
