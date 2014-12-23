@@ -1,5 +1,6 @@
-import javax.media.opengl.GL2;
 import robotrace.Vector;
+
+import javax.media.opengl.GL2;
 
 /**
  * Created by Noud on 12/20/2014.

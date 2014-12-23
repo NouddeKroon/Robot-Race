@@ -6,35 +6,35 @@
  * Noud de Kroon
  */
 
-import static javax.media.opengl.GL2.*;
-
 import robotrace.Base;
+
+import static javax.media.opengl.GL2.*;
 
 /**
  * Handles all of the RobotRace graphics functionality,
  * which should be extended per the assignment.
- * 
+ * <p/>
  * OpenGL functionality:
  * - Basic commands are called via the gl object;
  * - Utility commands are called via the glu and
- *   glut objects;
- * 
+ * glut objects;
+ * <p/>
  * GlobalState:
  * The gs object contains the GlobalState as described
  * in the assignment:
  * - The camera viewpoint angles, phi and theta, are
- *   changed interactively by holding the left mouse
- *   button and dragging;
+ * changed interactively by holding the left mouse
+ * button and dragging;
  * - The camera view width, vWidth, is changed
- *   interactively by holding the right mouse button
- *   and dragging upwards or downwards;
+ * interactively by holding the right mouse button
+ * and dragging upwards or downwards;
  * - The center point can be moved up and down by
- *   pressing the 'q' and 'z' keys, forwards and
- *   backwards with the 'w' and 's' keys, and
- *   left and right with the 'a' and 'd' keys;
+ * pressing the 'q' and 'z' keys, forwards and
+ * backwards with the 'w' and 's' keys, and
+ * left and right with the 'a' and 'd' keys;
  * - Other settings are changed via the menus
- *   at the top of the screen.
- * 
+ * at the top of the screen.
+ * <p/>
  * Textures:
  * Place your "track.jpg", "brick.jpg", "head.jpg",
  * and "torso.jpg" files in the same folder as this
@@ -43,7 +43,7 @@ import robotrace.Base;
  * Be aware, these objects are already defined and
  * cannot be used for other purposes. The texture
  * objects can be used as follows:
- * 
+ * <p/>
  * gl.glColor3f(1f, 1f, 1f);
  * track.bind(gl);
  * gl.glBegin(GL_QUADS);
@@ -55,8 +55,8 @@ import robotrace.Base;
  * gl.glVertex3d(1, 1, 0);
  * gl.glTexCoord2d(0, 1);
  * gl.glVertex3d(0, 1, 0);
- * gl.glEnd(); 
- * 
+ * gl.glEnd();
+ * <p/>
  * Note that it is hard or impossible to texture
  * objects drawn with GLUT. Either define the
  * primitives of the object yourself (as seen
@@ -64,20 +64,30 @@ import robotrace.Base;
  * to the GLUT object.
  */
 public class RobotRace extends Base {
-    
-    /** Array of the four robots. */
+
+    /**
+     * Array of the four robots.
+     */
     private final Robot[] robots;
-    
-    /** Instance of the camera. */
+
+    /**
+     * Instance of the camera.
+     */
     private final Camera camera;
-    
-    /** Instance of the race track. */
+
+    /**
+     * Instance of the race track.
+     */
     private final RaceTrack raceTrack;
-    
-    /** Instance of the terrain. */
+
+    /**
+     * Instance of the terrain.
+     */
     private final Terrain terrain;
 
-    /** Keep track of last time the scene was drawn. */
+    /**
+     * Keep track of last time the scene was drawn.
+     */
     private long lastTimeSceneDrawn = 0;
 
 //    private long startTimeDrawing = 0;
@@ -112,25 +122,25 @@ public class RobotRace extends Base {
         // Initialize the terrain
         terrain = new Terrain();
     }
-    
+
     /**
      * Called upon the start of the application.
      * Primarily used to configure OpenGL.
      */
     @Override
     public void initialize() {
-		
+
         // Enable blending.
         gl.glEnable(GL_BLEND);
         gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
+
         // Anti-aliasing can be enabled by uncommenting the following 4 lines.
-		// This can however cause problems on some graphics cards.
+        // This can however cause problems on some graphics cards.
         //gl.glEnable(GL_LINE_SMOOTH);
         //gl.glEnable(GL_POLYGON_SMOOTH);
         //gl.glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
         //gl.glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-        
+
         // Enable depth testing.
         gl.glEnable(GL_DEPTH_TEST);
         gl.glDepthFunc(GL_LESS);
@@ -138,20 +148,20 @@ public class RobotRace extends Base {
         // Enable lighting and light0
         gl.glEnable(GL_LIGHTING);
         gl.glEnable(GL_LIGHT0);
-		
-	    // Normalize normals.
+
+        // Normalize normals.
         gl.glEnable(GL_NORMALIZE);
-        
+
         // Converts colors to materials when lighting is enabled.
         gl.glEnable(GL_COLOR_MATERIAL);
         gl.glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-        
+
         // Enable textures. 
         gl.glEnable(GL_TEXTURE_2D);
         gl.glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
         gl.glBindTexture(GL_TEXTURE_2D, 0);
-		
-	    // Try to load four textures, add more if you like.
+
+        // Try to load four textures, add more if you like.
         track = loadTexture("track.jpg");
         brick = loadTexture("brick.jpg");
         head = loadTexture("head.jpg");
@@ -160,7 +170,7 @@ public class RobotRace extends Base {
 //        startTimeDrawing = System.nanoTime();
         lastTimeSceneDrawn = System.nanoTime();
     }
-    
+
     /**
      * Configures the viewing transform.
      */
@@ -168,7 +178,7 @@ public class RobotRace extends Base {
     public void setView() {
         // Select part of window.
         gl.glViewport(0, 0, gs.w, gs.h);
-        
+
         // Set projection matrix.
         gl.glMatrixMode(GL_PROJECTION);
         gl.glLoadIdentity();
@@ -181,8 +191,8 @@ public class RobotRace extends Base {
          * corresponding to a given gs.vWidth.
         */
 
-        double fovAngley = Math.toDegrees(2 * Math.atan(gs.vWidth * ((float)gs.h / (float)gs.w) / (2 * gs.vDist)));
-        glu.gluPerspective(fovAngley, (float)gs.w / (float)gs.h, 0.1*gs.vDist, 10.0*gs.vDist);
+        double fovAngley = Math.toDegrees(2 * Math.atan(gs.vWidth * ((float) gs.h / (float) gs.w) / (2 * gs.vDist)));
+        glu.gluPerspective(fovAngley, (float) gs.w / (float) gs.h, 0.1 * gs.vDist, 10.0 * gs.vDist);
 
         // Set camera.
         gl.glMatrixMode(GL_MODELVIEW);
@@ -203,14 +213,14 @@ public class RobotRace extends Base {
             gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR, SPECULAR, 0);
             gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, POSITION, 0);
         }
-               
+
         // Update the view according to the camera mode
         camera.update(gs);
-        glu.gluLookAt(camera.eye.x(),    camera.eye.y(),    camera.eye.z(),
-                      camera.center.x(), camera.center.y(), camera.center.z(),
-                      camera.up.x(),     camera.up.y(),     camera.up.z());
+        glu.gluLookAt(camera.eye.x(), camera.eye.y(), camera.eye.z(),
+                camera.center.x(), camera.center.y(), camera.center.z(),
+                camera.up.x(), camera.up.y(), camera.up.z());
     }
-    
+
     /**
      * Draws the entire scene.
      */
@@ -227,15 +237,15 @@ public class RobotRace extends Base {
 
         // Clear background.
         gl.glClear(GL_COLOR_BUFFER_BIT);
-        
+
         // Clear depth buffer.
         gl.glClear(GL_DEPTH_BUFFER_BIT);
-        
+
         // Set color to black.
         gl.glColor3f(0f, 0f, 0f);
-        
+
         gl.glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        
+
         // Draw the axis frame
         if (gs.showAxes) {
             drawAxisFrame();
@@ -265,7 +275,6 @@ public class RobotRace extends Base {
         }
 
 
-        
         // Draw terrain
         terrain.draw(gl);
     }
@@ -278,8 +287,6 @@ public class RobotRace extends Base {
         // Draw the 3 orthonormal axes, each the length of 1 unit (meter) and with their respective colors and a yellow origin.
         new AxisSystem().draw(gl, glut);
     }
-    
-
 
 
     /**
@@ -290,5 +297,5 @@ public class RobotRace extends Base {
         RobotRace robotRace = new RobotRace();
         robotRace.run();
     }
-    
+
 }

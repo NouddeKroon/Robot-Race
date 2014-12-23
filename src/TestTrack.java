@@ -82,38 +82,38 @@ public class TestTrack extends Track {
     public void draw(GL2 gl) {
         double dt = 0.01;
 
-        gl.glColor3f(1f,1f,0f);
+        gl.glColor3f(1f, 1f, 0f);
         Vector centreToInnerNext = Vector.Z.cross(getTangent(0, 0)).normalized();
         Vector nextPoint = getPoint(0);
         Vector innerRingPosNext = nextPoint.add(centreToInnerNext.scale(trackWidth / 2.0));
         Vector outerRingPosNext = nextPoint.add(centreToInnerNext.scale(-trackWidth / 2.0));
         for (double t = 0; t < 1; t = t + dt) {
             Vector centreToInner = centreToInnerNext;
-            centreToInnerNext = Vector.Z.cross(getTangent((t+dt)*50.0, 0)).normalized();
-            nextPoint = getPoint(t+dt);
+            centreToInnerNext = Vector.Z.cross(getTangent((t + dt) * 50.0, 0)).normalized();
+            nextPoint = getPoint(t + dt);
             Vector innerRingPosCurrent = innerRingPosNext;
-            innerRingPosNext = nextPoint.add(centreToInnerNext.scale(trackWidth/2.0));
+            innerRingPosNext = nextPoint.add(centreToInnerNext.scale(trackWidth / 2.0));
             Vector outerRingPosCurrent = outerRingPosNext;
-            outerRingPosNext = nextPoint.add(centreToInnerNext.scale(-trackWidth/2.0));
+            outerRingPosNext = nextPoint.add(centreToInnerNext.scale(-trackWidth / 2.0));
 
             gl.glBegin(GL_TRIANGLE_STRIP);
-            for (double z = -1; z<=1; z = z+0.25) {
+            for (double z = -1; z <= 1; z = z + 0.25) {
 
                 gl.glNormal3d(centreToInner.x(), centreToInner.y(), centreToInner.z());
-                gl.glVertex3d(innerRingPosCurrent.x(),innerRingPosCurrent.y(),z);
+                gl.glVertex3d(innerRingPosCurrent.x(), innerRingPosCurrent.y(), z);
 
-                gl.glNormal3d(centreToInnerNext.x(),centreToInnerNext.y(),centreToInnerNext.z());
+                gl.glNormal3d(centreToInnerNext.x(), centreToInnerNext.y(), centreToInnerNext.z());
                 gl.glVertex3d(innerRingPosNext.x(), innerRingPosNext.y(), z);
             }
             gl.glEnd();
 
             gl.glBegin(GL_TRIANGLE_STRIP);
-            for (double z = -1; z<1; z = z+0.1) {
+            for (double z = -1; z < 1; z = z + 0.1) {
 
-                gl.glNormal3d(-centreToInner.x(),-centreToInner.y(),-centreToInner.z());
-                gl.glVertex3d(outerRingPosCurrent.x(),outerRingPosCurrent.y(),z);
+                gl.glNormal3d(-centreToInner.x(), -centreToInner.y(), -centreToInner.z());
+                gl.glVertex3d(outerRingPosCurrent.x(), outerRingPosCurrent.y(), z);
 
-                gl.glNormal3d(-centreToInnerNext.x(),-centreToInnerNext.y(),-centreToInnerNext.z());
+                gl.glNormal3d(-centreToInnerNext.x(), -centreToInnerNext.y(), -centreToInnerNext.z());
                 gl.glVertex3d(outerRingPosNext.x(), outerRingPosNext.y(), z);
             }
             gl.glEnd();
@@ -122,7 +122,7 @@ public class TestTrack extends Track {
             drawTestTrackSurface(innerRingPosCurrent, centreToInner, innerRingPosNext, centreToInnerNext, gl);
 
             gl.glPushMatrix();
-            gl.glTranslated(0,0,-2);
+            gl.glTranslated(0, 0, -2);
             gl.glNormal3d(0, 0, -1);
             drawTestTrackSurface(innerRingPosCurrent, centreToInner, innerRingPosNext, centreToInnerNext, gl);
             gl.glPopMatrix();
@@ -135,7 +135,7 @@ public class TestTrack extends Track {
         gl.glBegin(gl.GL_TRIANGLE_STRIP);
         for (double w = 0; w <= 1.0d; w += dw) {
             Vector innerPoint0 = innerRingPosCurrent.add(centreToInner.scale(-trackWidth * w));
-            Vector innerPoint1  = innerRingPosNext.add(centreToInnerNext.scale(-trackWidth * w));
+            Vector innerPoint1 = innerRingPosNext.add(centreToInnerNext.scale(-trackWidth * w));
             gl.glVertex3d(innerPoint0.x(), innerPoint0.y(), innerPoint0.z());
             gl.glVertex3d(innerPoint1.x(), innerPoint1.y(), innerPoint1.z());
         }

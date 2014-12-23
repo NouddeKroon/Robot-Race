@@ -19,10 +19,10 @@ class RaceTrack {
             new GenericTrack(TrackCoordinates.CTRACK), new GenericTrack(TrackCoordinates.CUSTOMTRACK)
     };
 
-    /** Keep track of which track this instance is to draw. */
+    /**
+     * Keep track of which track this instance is to draw.
+     */
     int trackNr;
-
-
 
 
     /**
@@ -44,7 +44,6 @@ class RaceTrack {
      */
 
 
-
     public void draw(GL2 gl) {
         // The test track is selected
         updateTrackList(gl);
@@ -59,15 +58,15 @@ class RaceTrack {
         }
     }
 
-    private void updateTrackList (GL2 gl) {
+    private void updateTrackList(GL2 gl) {
         if (gs.trackNr != this.trackNr) {
             this.trackNr = gs.trackNr;
-            gl.glDeleteLists(displayList,1);
+            gl.glDeleteLists(displayList, 1);
             displayListDrawn = false;
         }
     }
 
-    public  Vector getPositionOnLane(double s, int laneNr) {
+    public Vector getPositionOnLane(double s, int laneNr) {
         return trackList[trackNr].getPositionOnLane(s, laneNr);
     }
 

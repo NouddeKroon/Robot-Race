@@ -1,5 +1,6 @@
-import javax.media.opengl.GL2;
 import robotrace.Vector;
+
+import javax.media.opengl.GL2;
 
 import static javax.media.opengl.GL.GL_TRIANGLE_STRIP;
 
@@ -16,7 +17,7 @@ public class StraightRoadSegment extends RoadSegment {
     Vector vectorToLeft;
     Vector differenceVector;
 
-    StraightRoadSegment (Vector startPoint, Vector endPoint, int segments) {
+    StraightRoadSegment(Vector startPoint, Vector endPoint, int segments) {
         this.startPoint = startPoint;
         this.endPoint = endPoint;
         this.segments = segments;
@@ -33,7 +34,7 @@ public class StraightRoadSegment extends RoadSegment {
 
     @Override
     double[] draw(GL2 gl) {
-        dt = 1 / (double)segments;
+        dt = 1 / (double) segments;
         gl.glColor3f(1f, 1f, 0f);
 
         differenceVector = endPoint.subtract(startPoint);
@@ -41,7 +42,7 @@ public class StraightRoadSegment extends RoadSegment {
         Vector nextPoint = startPoint;
         Vector rightWallPosNext = nextPoint.add(vectorToLeft.scale(trackWidth / 2.0));
         Vector LeftWallPosNext = nextPoint.add(vectorToLeft.scale(-trackWidth / 2.0));
-        for (double t = 0; t<1; t = t + dt) {
+        for (double t = 0; t < 1; t = t + dt) {
             nextPoint = nextPoint.add(differenceVector.scale(dt));
             Vector rightWallPosCurrent = rightWallPosNext;
             rightWallPosNext = nextPoint.add(vectorToLeft.scale(trackWidth / 2.0));
@@ -65,20 +66,20 @@ public class StraightRoadSegment extends RoadSegment {
             gl.glEnd();
 
             gl.glNormal3d(0, 0, 1);
-            drawTrackSurface(rightWallPosCurrent, vectorToLeft, rightWallPosNext, gl, (int)Math.round(t/dt));
+            drawTrackSurface(rightWallPosCurrent, vectorToLeft, rightWallPosNext, gl, (int) Math.round(t / dt));
 
             gl.glPushMatrix();
             gl.glTranslated(0, 0, -2);
             gl.glNormal3d(0, 0, -1);
-            drawTrackSurface(rightWallPosCurrent, vectorToLeft, rightWallPosNext, gl, (int)Math.round(t/dt));
+            drawTrackSurface(rightWallPosCurrent, vectorToLeft, rightWallPosNext, gl, (int) Math.round(t / dt));
             gl.glPopMatrix();
         }
-        double[] distances = {differenceVector.length(),differenceVector.length(),differenceVector.length(),differenceVector.length()};
+        double[] distances = {differenceVector.length(), differenceVector.length(), differenceVector.length(), differenceVector.length()};
         return distances;
     }
 
     private void drawTrackSurface(Vector innerRingPosCurrent, Vector centreToInner,
-                                  Vector innerRingPosNext,  GL2 gl, int segment) {
+                                  Vector innerRingPosNext, GL2 gl, int segment) {
         double dw = 0.125d;
         gl.glBegin(gl.GL_TRIANGLE_STRIP);
         for (double w = 0; w <= 1.0d; w += dw) {

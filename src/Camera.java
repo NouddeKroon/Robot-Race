@@ -5,13 +5,19 @@ import robotrace.Vector;
  * Implementation of a camera with a position and orientation.
  */
 class Camera {
-    /** The position of the camera. */
+    /**
+     * The position of the camera.
+     */
     public Vector eye = new Vector(3f, 6f, 5f);
 
-    /** The point to which the camera is looking. */
+    /**
+     * The point to which the camera is looking.
+     */
     public Vector center = Vector.O;
 
-    /** The up vector. */
+    /**
+     * The up vector.
+     */
     public Vector up = Vector.Z;
 
     /**
@@ -51,8 +57,8 @@ class Camera {
         //Calculate the X, Y and Z coordinates of eye using spherical coordinates.
         double eyeX, eyeY, eyeZ;
 
-        eyeX = Math.cos(gs.theta) * Math.cos(gs.phi) *  gs.vDist;
-        eyeY = Math.sin(gs.theta) * Math.cos(gs.phi) *  gs.vDist;
+        eyeX = Math.cos(gs.theta) * Math.cos(gs.phi) * gs.vDist;
+        eyeY = Math.sin(gs.theta) * Math.cos(gs.phi) * gs.vDist;
         eyeZ = Math.sin(gs.phi) * gs.vDist;
 
         //Calculate the eyeDisplacement vector (which is a vector pointing from the centre point to the eye),

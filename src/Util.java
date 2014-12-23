@@ -27,20 +27,20 @@ class Util {
     // convenience method to rotate the axis system to new orthonormal system specified by basis{X,Y,Z}.
     static void rotate(GL2 gl, Vector basisX, Vector basisY, Vector basisZ) {
         // Specify the rotation matrix in row Major order.
-        double[] rotMatrix = { basisX.x(), basisX.y(), basisX.z(), 0,
-                               basisY.x(), basisY.y(), basisY.z(), 0,
-                               basisZ.x(), basisZ.y(), basisZ.z(), 0,
-                               0,          0,          0,          1 };
+        double[] rotMatrix = {basisX.x(), basisX.y(), basisX.z(), 0,
+                basisY.x(), basisY.y(), basisY.z(), 0,
+                basisZ.x(), basisZ.y(), basisZ.z(), 0,
+                0, 0, 0, 1};
 
         gl.glMultMatrixd(rotMatrix, 0);
     }
 
     // convenience method to rotate the axis system from a orthonormal system specified by basis{X,Y,Z}.
     static void undoRotate(GL2 gl, Vector basisX, Vector basisY, Vector basisZ) {
-        double[] rotMatrix = { basisX.x(), basisY.x(), basisZ.x(), 0,
-                               basisX.y(), basisY.y(), basisZ.y(), 0,
-                               basisX.z(), basisY.z(), basisZ.z(), 0,
-                               0,          0,          0,          1 };
+        double[] rotMatrix = {basisX.x(), basisY.x(), basisZ.x(), 0,
+                basisX.y(), basisY.y(), basisZ.y(), 0,
+                basisX.z(), basisY.z(), basisZ.z(), 0,
+                0, 0, 0, 1};
 
         gl.glMultMatrixd(rotMatrix, 0);
     }
@@ -80,38 +80,38 @@ class Util {
                                 double v3x, double v3y, double v3z,
                                 double v4x, double v4y, double v4z) {
         makeFaceVertex3(gl,
-                        v1x, v1y, v1z,
-                        v2x, v2y, v2z,
-                        v3x, v3y, v3z);
+                v1x, v1y, v1z,
+                v2x, v2y, v2z,
+                v3x, v3y, v3z);
 
         gl.glVertex3d(v4x, v4y, v4z);
     }
 
     // Method to return a point on a Bezier curve.
-    static public Vector getCubicBezierPnt (double t, Vector P0, Vector P1, Vector P2, Vector P3) {
+    static public Vector getCubicBezierPnt(double t, Vector P0, Vector P1, Vector P2, Vector P3) {
 
         //Calculate the individual contributions of the 3 control points.
-        Vector p0Contribution = P0.scale(Math.pow(1-t,3));
-        Vector p1Contribution = P1.scale(3*t*Math.pow(1-t,2));
-        Vector p2Contribution = P2.scale(3*(1-t)*Math.pow(t,2));
-        Vector p3Contribution = P3.scale(Math.pow(t,3));
+        Vector p0Contribution = P0.scale(Math.pow(1 - t, 3));
+        Vector p1Contribution = P1.scale(3 * t * Math.pow(1 - t, 2));
+        Vector p2Contribution = P2.scale(3 * (1 - t) * Math.pow(t, 2));
+        Vector p3Contribution = P3.scale(Math.pow(t, 3));
 
         //Add the all the contributions together and return the result.
         return p0Contribution.add(p1Contribution.add(p2Contribution.add(p3Contribution)));
     }
 
     //Method to return the derivative of a point on a Bezier curve.
-    static public Vector getCubicBezierTng (double t, Vector P0, Vector P1, Vector P2, Vector P3) {
+    static public Vector getCubicBezierTng(double t, Vector P0, Vector P1, Vector P2, Vector P3) {
 
         //The tangent of the cubic Bezier curve has 3 individual vector contributions, calculate these:
         Vector contribution1 = P1.subtract(P0);
-        contribution1 = contribution1.scale(3*Math.pow((1 - t), 2));
+        contribution1 = contribution1.scale(3 * Math.pow((1 - t), 2));
 
         Vector contribution2 = P2.subtract(P1);
-        contribution2 = contribution2.scale(6*t*(1-t));
+        contribution2 = contribution2.scale(6 * t * (1 - t));
 
         Vector contribution3 = P3.subtract(P2);
-        contribution3 = contribution3.scale(3*Math.pow(t,2));
+        contribution3 = contribution3.scale(3 * Math.pow(t, 2));
 
         //Add the all the contributions together and return the result.
         return contribution1.add(contribution2.add(contribution3));

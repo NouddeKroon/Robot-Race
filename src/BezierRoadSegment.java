@@ -1,6 +1,6 @@
-import javax.media.opengl.GL2;
 import robotrace.Vector;
 
+import javax.media.opengl.GL2;
 import java.util.Arrays;
 
 import static javax.media.opengl.GL.GL_TRIANGLE_STRIP;
@@ -26,7 +26,7 @@ public class BezierRoadSegment extends RoadSegment {
         this.point2 = point2;
         this.point3 = point3;
         this.segments = segments;
-        segmentDistances = new double[4][segments+1];
+        segmentDistances = new double[4][segments + 1];
     }
 
     @Override
@@ -35,28 +35,28 @@ public class BezierRoadSegment extends RoadSegment {
         Vector tangent = null;
         Vector centreToOuter = null;
         s = s % segmentDistances[laneNr][segments];
-        int binarySearchResult = Arrays.binarySearch(segmentDistances[laneNr],s);
+        int binarySearchResult = Arrays.binarySearch(segmentDistances[laneNr], s);
         if (binarySearchResult < 0) {
-            int insertionPoint =  -1 -  binarySearchResult;
-            double difference = segmentDistances[laneNr][insertionPoint] - segmentDistances[laneNr][insertionPoint-1];
-            double t = (insertionPoint - 1 + ( s - segmentDistances[laneNr][insertionPoint-1] ) / difference)*dt;
-            coordinate = Util.getCubicBezierPnt(t,point0,point1,point2,point3);
-             tangent = Util.getCubicBezierTng(t, point0, point1, point2, point3);
+            int insertionPoint = -1 - binarySearchResult;
+            double difference = segmentDistances[laneNr][insertionPoint] - segmentDistances[laneNr][insertionPoint - 1];
+            double t = (insertionPoint - 1 + (s - segmentDistances[laneNr][insertionPoint - 1]) / difference) * dt;
+            coordinate = Util.getCubicBezierPnt(t, point0, point1, point2, point3);
+            tangent = Util.getCubicBezierTng(t, point0, point1, point2, point3);
         } else {
-            coordinate = Util.getCubicBezierPnt(dt*binarySearchResult,point0,point1,point2,point3);
+            coordinate = Util.getCubicBezierPnt(dt * binarySearchResult, point0, point1, point2, point3);
             tangent = Util.getCubicBezierTng(dt * binarySearchResult, point0, point1, point2, point3);
         }
         centreToOuter = Vector.Z.cross(tangent).normalized();
         coordinate = coordinate.subtract(centreToOuter.scale(-1.5));
 
-        return coordinate.subtract(centreToOuter.scale((double)laneNr));
+        return coordinate.subtract(centreToOuter.scale((double) laneNr));
 
 
     }
 
     @Override
     double[] draw(GL2 gl) {
-        dt = 1 / (double)segments;
+        dt = 1 / (double) segments;
 
         gl.glColor3f(1f, 1f, 0f);
 
@@ -64,7 +64,7 @@ public class BezierRoadSegment extends RoadSegment {
         Vector nextPoint = point0;
         Vector leftEdgePosNext = nextPoint.add(vectorToLeftNext.scale(trackWidth / 2.0));
         Vector rightEdgePosNext = nextPoint.add(vectorToLeftNext.scale(-trackWidth / 2.0));
-        for (double t = 0; t<1; t = t + dt) {
+        for (double t = 0; t < 1; t = t + dt) {
             Vector vectorToLeft = vectorToLeftNext;
             vectorToLeftNext = Vector.Z.cross(Util.getCubicBezierTng(t + dt, point0, point1, point2, point3)).normalized();
             nextPoint = Util.getCubicBezierPnt(t + dt, point0, point1, point2, point3);
@@ -76,10 +76,10 @@ public class BezierRoadSegment extends RoadSegment {
             gl.glBegin(GL_TRIANGLE_STRIP);
             for (double z = -1; z <= 1; z = z + 0.25) {
                 gl.glNormal3d(vectorToLeft.x(), vectorToLeft.y(), vectorToLeft.z());
-                gl.glVertex3d(leftEdgePosCurrent.x(), leftEdgePosCurrent.y(), leftEdgePosCurrent.z()-1+z);
+                gl.glVertex3d(leftEdgePosCurrent.x(), leftEdgePosCurrent.y(), leftEdgePosCurrent.z() - 1 + z);
 
                 gl.glNormal3d(vectorToLeftNext.x(), vectorToLeftNext.y(), vectorToLeftNext.z());
-                gl.glVertex3d(leftEdgePosNext.x(), leftEdgePosNext.y(), leftEdgePosNext.z()-1+z);
+                gl.glVertex3d(leftEdgePosNext.x(), leftEdgePosNext.y(), leftEdgePosNext.z() - 1 + z);
             }
             gl.glEnd();
 
@@ -87,23 +87,23 @@ public class BezierRoadSegment extends RoadSegment {
             for (double z = -1; z < 1; z = z + 0.1) {
 
                 gl.glNormal3d(-vectorToLeft.x(), -vectorToLeft.y(), -vectorToLeft.z());
-                gl.glVertex3d(rightEdgeCurrent.x(), rightEdgeCurrent.y(), rightEdgeCurrent.z()-1+z);
+                gl.glVertex3d(rightEdgeCurrent.x(), rightEdgeCurrent.y(), rightEdgeCurrent.z() - 1 + z);
 
                 gl.glNormal3d(-vectorToLeftNext.x(), -vectorToLeftNext.y(), -vectorToLeftNext.z());
-                gl.glVertex3d(rightEdgePosNext.x(), rightEdgePosNext.y(), rightEdgePosNext.z() -1 + z);
+                gl.glVertex3d(rightEdgePosNext.x(), rightEdgePosNext.y(), rightEdgePosNext.z() - 1 + z);
             }
             gl.glEnd();
 
             gl.glNormal3d(0, 0, 1);
-            drawTrackSurface(leftEdgePosCurrent, vectorToLeft, leftEdgePosNext, vectorToLeftNext, gl, (int)Math.round(t/dt));
+            drawTrackSurface(leftEdgePosCurrent, vectorToLeft, leftEdgePosNext, vectorToLeftNext, gl, (int) Math.round(t / dt));
 
             gl.glPushMatrix();
             gl.glTranslated(0, 0, -2);
             gl.glNormal3d(0, 0, -1);
-            drawTrackSurface(leftEdgePosCurrent, vectorToLeft, leftEdgePosNext, vectorToLeftNext, gl, (int)Math.round(t/dt));
+            drawTrackSurface(leftEdgePosCurrent, vectorToLeft, leftEdgePosNext, vectorToLeftNext, gl, (int) Math.round(t / dt));
             gl.glPopMatrix();
         }
-        double[] distances = {segmentDistances[0][segments],segmentDistances[1][segments],
+        double[] distances = {segmentDistances[0][segments], segmentDistances[1][segments],
                 segmentDistances[2][segments], segmentDistances[3][segments]};
         return distances;
     }
@@ -111,14 +111,13 @@ public class BezierRoadSegment extends RoadSegment {
     @Override
     Vector getTangent(double s, int laneNr) {
         s = s % segmentDistances[laneNr][segments];
-        int binarySearchResult = Arrays.binarySearch(segmentDistances[laneNr],s);
+        int binarySearchResult = Arrays.binarySearch(segmentDistances[laneNr], s);
         if (binarySearchResult < 0) {
-            int insertionPoint =  -1 -  binarySearchResult;
-            double difference = segmentDistances[laneNr][insertionPoint] - segmentDistances[laneNr][(insertionPoint-1)];
-            double t = (insertionPoint - 1 + ( s - segmentDistances[laneNr][insertionPoint-1] ) / difference)*dt;
+            int insertionPoint = -1 - binarySearchResult;
+            double difference = segmentDistances[laneNr][insertionPoint] - segmentDistances[laneNr][(insertionPoint - 1)];
+            double t = (insertionPoint - 1 + (s - segmentDistances[laneNr][insertionPoint - 1]) / difference) * dt;
             return Util.getCubicBezierTng(t, point0, point1, point2, point3).normalized();
-        }
-        else return Util.getCubicBezierTng(dt * binarySearchResult, point0, point1, point2, point3).normalized();
+        } else return Util.getCubicBezierTng(dt * binarySearchResult, point0, point1, point2, point3).normalized();
     }
 
     private void drawTrackSurface(Vector leftEdgePosCurrent, Vector vectorToLeft,
@@ -134,9 +133,8 @@ public class BezierRoadSegment extends RoadSegment {
             if ((w / dw) % 2 == 1) {
                 int laneNr = (int) Math.round((w - 0.125) / 0.25);
                 Vector distanceVector = innerPoint1.subtract(innerPoint0);
-                segmentDistances[laneNr][(segment+1)] = segmentDistances[laneNr][segment] + distanceVector.length();
+                segmentDistances[laneNr][(segment + 1)] = segmentDistances[laneNr][segment] + distanceVector.length();
             }
-
 
 
         }

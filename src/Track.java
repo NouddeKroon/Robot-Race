@@ -7,7 +7,7 @@ import javax.media.opengl.GL2;
  */
 public abstract class Track {
 
-public abstract void draw(GL2 gl);
+    public abstract void draw(GL2 gl);
 
     public abstract Vector getPositionOnLane(double s, int laneNr);
 
