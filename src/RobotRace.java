@@ -117,7 +117,8 @@ public class RobotRace extends Base {
         robots[3] = new Robot(Material.ORANGE, raceTrack, 3, gs);
 
         // Initialize the camera
-        camera = new Camera();
+        camera = new Camera(gs, robots);
+        camera.update(0);
 
         // Initialize the terrain
         terrain = new Terrain();
@@ -215,7 +216,6 @@ public class RobotRace extends Base {
         }
 
         // Update the view according to the camera mode
-        camera.update(gs);
         glu.gluLookAt(camera.eye.x(), camera.eye.y(), camera.eye.z(),
                 camera.center.x(), camera.center.y(), camera.center.z(),
                 camera.up.x(), camera.up.y(), camera.up.z());
@@ -229,6 +229,9 @@ public class RobotRace extends Base {
         long currentTime = System.nanoTime();
         // TODO: might be useful, but not used for now
         long diffTimeFrames = currentTime - lastTimeSceneDrawn;
+
+        camera.setCamMode(gs.camMode);
+        camera.update(diffTimeFrames);
 
         lastTimeSceneDrawn = currentTime;
 

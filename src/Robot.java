@@ -28,6 +28,10 @@ class Robot {
 
     private double distCovered = 0; // in meters
 
+    Vector pos = Vector.O;
+    Vector tangent = Vector.O;
+    Vector normal = Vector.O;
+
     double stickSphereRadius = 0.033f;
 
     // Translation for to position the center of the robot on top of the xy-plane
@@ -108,7 +112,7 @@ class Robot {
         }
 
         // Get the previous tangent to calculate the incline
-        Vector tangent = track.getTangent(distCovered, trackLane);
+        tangent = track.getTangent(distCovered, trackLane);
 
         // Calculate an incline factor by dividing the angle between the tangent and the projection of the tangent on
         // the XOY plane by PI / 2. The z coord will specify whether we are moving up an incline or down.
@@ -119,15 +123,13 @@ class Robot {
         double inclination = posNegIncline * Math.asin(tangent.cross(projectedTangent).length()) / (0.5 * Math.PI);
 
         double dist = (timeDiff / 10e9) * (1 + (-1) * inclinationFactor * inclination) * speed;
-//        double dist = (timeDiff / 10e9) * speed;
         distCovered += dist;
 
-        System.out.println("inc: " + inclination + " dist: " + dist + " speed: " + (1 + (-1) * inclinationFactor * inclination) * speed);
+//        System.out.println("inc: " + inclination + " dist: " + dist + " speed: " + (1 + (-1) * inclinationFactor * inclination) * speed);
 
-        Vector pos = track.getPositionOnLane(distCovered, trackLane);
+        pos = track.getPositionOnLane(distCovered, trackLane);
         tangent = track.getTangent(distCovered, trackLane);
-        Vector normal = track.getNormal(distCovered, trackLane);
-
+        normal = track.getNormal(distCovered, trackLane);
 
         gl.glPushMatrix();
 
