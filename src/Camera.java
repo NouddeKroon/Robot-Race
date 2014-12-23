@@ -5,6 +5,15 @@ import robotrace.Vector;
  * Implementation of a camera with a position and orientation.
  */
 class Camera {
+    static final int DEFAULT = 0;
+    static final int HELICOPTER = 1;
+    static final int MOTORCYCLE = 2;
+    static final int FIRST_PERSON = 3;
+    static final int AUTO = 4;
+
+    static final int MODE_MIN = DEFAULT;
+    static final int MODE_MAX = AUTO;
+
     GlobalState gs;
 
     // The robots that are to be viewed followed
@@ -24,7 +33,7 @@ class Camera {
     Point point;
     Point transitionTarget;
 
-    private int camMode;
+    private int camMode = DEFAULT;
 
     double transitionTime = -1;
 
@@ -41,21 +50,23 @@ class Camera {
         point = new DefaultPoint(gs);
     }
 
+    // Set the camera mode.
+    // Check if the camera is changed and perform a animation of the camera to the new mode
     public void setCamMode(int mode) {
-        assert 0 <= mode && mode < 5;
+        assert MODE_MIN <= mode && mode <= MODE_MAX;
 
-        if (camMode == mode) return;
+        // If mode is already set do nothing and when a transition is still underway do nothing
+        if (camMode == mode || transitionTime > 0) return;
 
         camMode = mode;
 
-        transitionTime = -1;
-        timeElapsed = 0;
-
-        if (camMode == 1) {
-            point = new HelicopterRobotPoint(robots[robotIdx]);
-        } else if (camMode == 2) {
-            point = new MotorcycleRobotPoint(robots[robotIdx]);
-        } else if (camMode == 3) {
+        // For the different cam modes set the target
+        if (camMode == HELICOPTER) {
+            transitionTarget = new HelicopterRobotPoint(robots[robotIdx]);
+        } else if (camMode == MOTORCYCLE) {
+            transitionTarget = new MotorcycleRobotPoint(robots[robotIdx]);
+        } else if (camMode == FIRST_PERSON) {
+            // Find the last robot by looking for the robot which has traveled the smallest distance.
             double minDist = Double.MAX_VALUE;
 
             for (int idx = 0; idx < robots.length; idx++) {
@@ -65,12 +76,18 @@ class Camera {
                 }
             }
 
-            point = new FirstPersonRobotPoint(robots[robotIdx]);
-        } else {
-            point = new DefaultPoint(gs);
+            transitionTarget = new FirstPersonRobotPoint(robots[robotIdx]);
+        } else {  // camMode == DEFAULT
+            transitionTarget = new DefaultPoint(gs);
         }
 
-        up = Vector.Z;
+        transitionTime = 1e9;
+        // Use a short animation.
+        point = new Transition(point,
+                transitionTarget,
+                transitionTime);
+        timeElapsed = 0;
+
     }
 
     /**
@@ -85,15 +102,16 @@ class Camera {
                 point = transitionTarget;
                 transitionTime = -1;
             }
-        } else if (timeElapsed > 2 * 10e9) {
+        } else if (camMode != DEFAULT && timeElapsed > 7.5e9) {
             robotIdx = (robotIdx + 1) % robots.length;
 
-            transitionTime = 10e9;
-            if (camMode == 1) {
+            if (camMode == HELICOPTER) {
                 transitionTarget = new HelicopterRobotPoint(robots[robotIdx]);
-            } else if (camMode == 2) {
+            } else if (camMode == MOTORCYCLE) {
                 transitionTarget = new MotorcycleRobotPoint(robots[robotIdx]);
             }
+
+            transitionTime = 2.5e9;
             point = new Transition(point, transitionTarget, transitionTime);
             timeElapsed = 0;
         }
