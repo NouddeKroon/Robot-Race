@@ -25,12 +25,18 @@ public enum TrackCoordinates {
             new StraightRoadSegment(new Vector(10, 10, 1), new Vector(-20, 10, 1), 20),
             new BezierRoadSegment(new Vector(-20, 10, 1), new Vector(-25, 10, 1), new Vector(-25, 0, 1), new Vector(-20, 0, 1), 100)
     }),
-    CUSTOMTRACK(new RoadSegment[]{
-            new BezierRoadSegment(new Vector(-20, -20, 1), new Vector(-40, -20, 1), new Vector(-40, 20, 1), new Vector(-20, 20, 1), 100),
-            new BezierRoadSegment(new Vector(-20, 20, 1), new Vector(-10, 20, 1), new Vector(10, -20, 1), new Vector(20, -20, 1), 100),
-            new BezierRoadSegment(new Vector(20, -20, 1), new Vector(40, -20, 1), new Vector(40, 20, 10), new Vector(20, 20, 10), 100),
-            new BezierRoadSegment(new Vector(20, 20, 10), new Vector(10, 20, 10), new Vector(-10, -20, 1), new Vector(-20, -20, 1), 100)});
+//    CUSTOMTRACK(new RoadSegment[]{
+//            new BezierRoadSegment(new Vector(-20, -20, 1), new Vector(-40, -20, 1), new Vector(-40, 20, 1), new Vector(-20, 20, 1), 100),
+//            new BezierRoadSegment(new Vector(-20, 20, 1), new Vector(-10, 20, 1), new Vector(10, -20, 1), new Vector(20, -20, 1), 100),
+//            new BezierRoadSegment(new Vector(20, -20, 1), new Vector(40, -20, 1), new Vector(40, 20, 10), new Vector(20, 20, 10), 100),
+//            new BezierRoadSegment(new Vector(20, 20, 10), new Vector(10, 20, 10), new Vector(-10, -20, 1), new Vector(-20, -20, 1), 100)});
 
+
+    CUSTOMTRACK(new RoadSegment[]{
+        new BezierRoadSegment(new Vector(-10, -10, 1), new Vector(-20, -10, 1), new Vector(-20, 10, 1), new Vector(-10, 10, 1), 100),
+                new BezierRoadSegment(new Vector(-10, 10, 1), new Vector(-5, 10, 1), new Vector(5, -10, 1), new Vector(10, -10, 1), 100),
+                new BezierRoadSegment(new Vector(10, -10, 1), new Vector(20, -10, 1), new Vector(20, 10, 10), new Vector(10, 10, 10), 100),
+                new BezierRoadSegment(new Vector(10, 10, 10), new Vector(5, 10, 10), new Vector(-5, -10, 1), new Vector(-10, -10, 1), 100)});
 
     RoadSegment[] roadSegments;
 
