@@ -5,6 +5,10 @@ import javax.media.opengl.GL2;
 /**
  * Created by Noud on 12/22/2014.
  */
+
+/**
+ * Abstract class defining the common features between the GenericTrack and the TestTrack classes.
+ */
 public abstract class Track {
 
     public abstract void draw(GL2 gl);
