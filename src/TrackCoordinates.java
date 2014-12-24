@@ -3,6 +3,10 @@ import robotrace.Vector;
 /**
  * Created by Noud on 12/22/2014.
  */
+
+/**
+ * Enum containing the coordinates and structure of each track.
+ */
 public enum TrackCoordinates {
     OTRACK(new RoadSegment[]{
             new BezierRoadSegment(new Vector(-15, 0, 1), new Vector(-15, 30, 1), new Vector(15, 30, 1), new Vector(15, 0, 1), 50),
@@ -25,12 +29,6 @@ public enum TrackCoordinates {
             new StraightRoadSegment(new Vector(10, 10, 1), new Vector(-20, 10, 1), 20),
             new BezierRoadSegment(new Vector(-20, 10, 1), new Vector(-25, 10, 1), new Vector(-25, 0, 1), new Vector(-20, 0, 1), 100)
     }),
-//    CUSTOMTRACK(new RoadSegment[]{
-//            new BezierRoadSegment(new Vector(-20, -20, 1), new Vector(-40, -20, 1), new Vector(-40, 20, 1), new Vector(-20, 20, 1), 100),
-//            new BezierRoadSegment(new Vector(-20, 20, 1), new Vector(-10, 20, 1), new Vector(10, -20, 1), new Vector(20, -20, 1), 100),
-//            new BezierRoadSegment(new Vector(20, -20, 1), new Vector(40, -20, 1), new Vector(40, 20, 10), new Vector(20, 20, 10), 100),
-//            new BezierRoadSegment(new Vector(20, 20, 10), new Vector(10, 20, 10), new Vector(-10, -20, 1), new Vector(-20, -20, 1), 100)});
-
 
     CUSTOMTRACK(new RoadSegment[]{
         new BezierRoadSegment(new Vector(-10, -10, 1), new Vector(-20, -10, 1), new Vector(-20, 10, 1), new Vector(-10, 10, 1), 100),
