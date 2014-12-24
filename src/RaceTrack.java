@@ -8,16 +8,12 @@ import javax.media.opengl.GL2;
  */
 class RaceTrack {
     GlobalState gs;
-    boolean displayListDrawn;
-
-    int displayList;
-    RoadSegment[] oTrack = new RoadSegment[2];
-
+    boolean displayListDrawn;           //False if the display list is empty.
+    int displayList;                    //Variable pointing to the display list.
     //Array containing the 5 different track objects
     Track[] trackList = {
             new TestTrack(), new GenericTrack(TrackCoordinates.OTRACK), new GenericTrack(TrackCoordinates.LTRACK),
-            new GenericTrack(TrackCoordinates.CTRACK), new GenericTrack(TrackCoordinates.CUSTOMTRACK)
-    };
+            new GenericTrack(TrackCoordinates.CTRACK), new GenericTrack(TrackCoordinates.CUSTOMTRACK)};
 
     /**
      * Keep track of which track this instance is to draw.
@@ -33,31 +29,28 @@ class RaceTrack {
         this.gs = gs;
     }
 
-    // Specify (after instantiation) which of the tracks to use. TRACKNR specifies tracks from 0 to TODO: max track nr.
-    public void setTrackNr(int trackNr) {
-        this.trackNr = trackNr;
-    }
-
-
     /**
-     * Draws this track, based on the selected track number.
+     * Method first checks if there has been a change in track selection, by calling updateTrackList method. If so,
+     * it generates a display list, and calls the appropiate track object to draw itself, storing it in the display list.
+     * If the displayListDrawn boolean is already set to true, it just draws the stored list.
      */
-
-
     public void draw(GL2 gl) {
-        // The test track is selected
         updateTrackList(gl);
         if (!displayListDrawn) {
-            displayListDrawn = true;
             displayList = gl.glGenLists(1);
             gl.glNewList(displayList, GL2.GL_COMPILE);
             trackList[trackNr].draw(gl);
             gl.glEndList();
+            displayListDrawn = true;
         } else {
             gl.glCallList(displayList);
         }
     }
 
+    /**
+     * Method that checks if the local trackNr variable is still the same as the global state value. If not, it updates
+     * the local variable, and resets the display list.
+     */
     private void updateTrackList(GL2 gl) {
         if (gs.trackNr != this.trackNr) {
             this.trackNr = gs.trackNr;
@@ -66,14 +59,17 @@ class RaceTrack {
         }
     }
 
+    //Method differs the getPositionOnLane request to the appropriate track object.
     public Vector getPositionOnLane(double s, int laneNr) {
         return trackList[trackNr].getPositionOnLane(s, laneNr);
     }
 
+    //Method differs the getTangent request to the appropriate track object.
     public Vector getTangent(double s, int laneNr) {
         return trackList[trackNr].getTangent(s, laneNr);
     }
 
+    //Method differs the getNormal request to the appropriate track.
     public Vector getNormal(double s, int laneNr) {
         return trackList[trackNr].getNormal(s, laneNr);
     }
