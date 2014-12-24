@@ -229,8 +229,6 @@ public class RobotRace extends Base {
         long currentTime = System.nanoTime();
         long diffTimeFrames = currentTime - lastTimeSceneDrawn;
 
-        camera.setCamMode(gs.camMode);
-        camera.update(diffTimeFrames);
 
         lastTimeSceneDrawn = currentTime;
 
@@ -262,6 +260,9 @@ public class RobotRace extends Base {
         for (int i = 0; i < 4; i++) {
             robots[i].drawAtPos(gl, glut, diffTimeFrames);
         }
+
+        camera.setCamMode(gs.camMode);
+        camera.update(diffTimeFrames);
 
         // Draw terrain
         terrain.draw(gl);
