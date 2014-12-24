@@ -16,4 +16,7 @@ public abstract class RoadSegment {
 
     //Every road segment is able to return a tangent vector, when given a relative distance travelled on the segment.
     abstract Vector getTangent(double s, int laneNr);
+
+    //Every road segment is able to return a normal vector, when given a relative distance travelled on the segment.
+    abstract Vector getNormal(double s, int laneNr);
 }
