@@ -22,6 +22,7 @@ public class GenericTrack extends Track {
      * Method that calls each roadSegment to call itself. These segments return an array containing the length of the segment
      * on a per lane basis. Record these in the distancesTablePerLane array.
      */
+    @Override
     public void draw(GL2 gl) {
         distancesTablePerLane = new double[roadSegments.length + 1][4];
         for (int i = 0; i < roadSegments.length; i++) {
@@ -36,6 +37,7 @@ public class GenericTrack extends Track {
      * Method for returning position, given a distance and lane number. Use the distancesTablePerLane array to decide
      * which RoadSegment to pass the call to, giving that RoadSegment a relative distance on that segment.
      */
+    @Override
     public Vector getPositionOnLane(double s, int laneNr) {
         s = s % distancesTablePerLane[distancesTablePerLane.length - 1][laneNr];
         for (int i = 0; i < distancesTablePerLane.length; i++) {
@@ -51,6 +53,7 @@ public class GenericTrack extends Track {
      * Method for returning a tangent vector, given a distance and lane number. Use the distancesTablePerLane array to
      * decide which RoadSegment to pass the call to, giving that RoadSegment a relative distance on that segment.
      */
+    @Override
     public Vector getTangent(double s, int laneNr) {
         s = s % distancesTablePerLane[distancesTablePerLane.length - 1][laneNr];
         for (int i = 0; i < distancesTablePerLane.length; i++) {
@@ -66,7 +69,15 @@ public class GenericTrack extends Track {
      * Method for returning a normal vector, given a distance and lane number. Use the distancesTablePerLane array to
      * decide which RoadSegment to pass the call to, giving that RoadSegment a relative distance on that segment.
      */
+    @Override
     public Vector getNormal(double s, int laneNr) {
-        return Vector.Z;
+        s = s % distancesTablePerLane[distancesTablePerLane.length - 1][laneNr];
+        for (int i = 0; i < distancesTablePerLane.length; i++) {
+            if (s < distancesTablePerLane[i][laneNr]) {
+                s -= distancesTablePerLane[i - 1][laneNr];
+                return roadSegments[i - 1].getNormal(s, laneNr);
+            }
+        }
+        return null;
     }
 }
