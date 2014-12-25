@@ -33,7 +33,8 @@ public class GenericTrack extends Track {
     }
 
     /**
-     * Method for returning position, given a distance and lane number.
+     * Method for returning position, given a distance and lane number. Use the distancesTablePerLane array to decide
+     * which RoadSegment to pass the call to, giving that RoadSegment a relative distance on that segment.
      */
     public Vector getPositionOnLane(double s, int laneNr) {
         s = s % distancesTablePerLane[distancesTablePerLane.length - 1][laneNr];
@@ -46,6 +47,10 @@ public class GenericTrack extends Track {
         return null;
     }
 
+    /**
+     * Method for returning a tangent vector, given a distance and lane number. Use the distancesTablePerLane array to
+     * decide which RoadSegment to pass the call to, giving that RoadSegment a relative distance on that segment.
+     */
     public Vector getTangent(double s, int laneNr) {
         s = s % distancesTablePerLane[distancesTablePerLane.length - 1][laneNr];
         for (int i = 0; i < distancesTablePerLane.length; i++) {
@@ -57,14 +62,11 @@ public class GenericTrack extends Track {
         return null;
     }
 
+    /**
+     * Method for returning a normal vector, given a distance and lane number. Use the distancesTablePerLane array to
+     * decide which RoadSegment to pass the call to, giving that RoadSegment a relative distance on that segment.
+     */
     public Vector getNormal(double s, int laneNr) {
-        s = s % distancesTablePerLane[distancesTablePerLane.length - 1][laneNr];
-        for (int i = 0; i < distancesTablePerLane.length; i++) {
-            if (s < distancesTablePerLane[i][laneNr]) {
-                s -= distancesTablePerLane[i - 1][laneNr];
-                return roadSegments[i - 1].getNormal(s, laneNr);
-            }
-        }
-        return null;
+        return Vector.Z;
     }
 }
