@@ -37,13 +37,13 @@ class RaceTrack {
     public void draw(GL2 gl) {
         updateTrackList(gl);
         if (!displayListDrawn) {
-            displayList = gl.glGenLists(1);
-            gl.glNewList(displayList, GL2.GL_COMPILE);
+
+            gl.glNewList(1, GL2.GL_COMPILE);
             trackList[trackNr].draw(gl);
             gl.glEndList();
             displayListDrawn = true;
         } else {
-            gl.glCallList(displayList);
+            gl.glCallList(1);
         }
     }
 
@@ -54,7 +54,6 @@ class RaceTrack {
     private void updateTrackList(GL2 gl) {
         if (gs.trackNr != this.trackNr) {
             this.trackNr = gs.trackNr;
-            gl.glDeleteLists(displayList, 1);
             displayListDrawn = false;
         }
     }

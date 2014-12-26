@@ -122,6 +122,8 @@ public class RobotRace extends Base {
 
         // Initialize the terrain
         terrain = new Terrain();
+
+
     }
 
     /**
@@ -170,6 +172,9 @@ public class RobotRace extends Base {
 
 //        startTimeDrawing = System.nanoTime();
         lastTimeSceneDrawn = System.nanoTime();
+
+        //Generate the 2 display lists we use.
+        gl.glGenLists(2);
     }
 
     /**

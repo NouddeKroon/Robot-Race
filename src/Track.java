@@ -20,3 +20,4 @@ public abstract class Track {
     public abstract Vector getNormal(double s, int laneNr);
 
 }
+

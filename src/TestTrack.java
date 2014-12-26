@@ -4,10 +4,6 @@ import javax.media.opengl.GL2;
 
 import static javax.media.opengl.GL.GL_TRIANGLE_STRIP;
 
-/**
- * Created by Noud on 12/22/2014.
- */
-
 //Track class for drawing the test track from the assignment.
 public class TestTrack extends Track {
     // Dimension of the basic oval track specified in the assignment.
@@ -26,7 +22,7 @@ public class TestTrack extends Track {
      * Method returning a position coordinate on the oval, given a distance traveled and lane number. Note that lane
      * 0 is the rightmost lane on the track. Calculates a vector "toLeft" from the cross between the tangent and the normal
      * in order to create the appropriate offset for each lane.
-    **/
+     **/
     public Vector getPositionOnLane(double s, int laneNr) {
         double t;
 
@@ -54,7 +50,7 @@ public class TestTrack extends Track {
     /**
      * A tangent to a 2D outline of oval shape. The below functions are obtained by taking dx/dt and dy/dt of the
      * function in getPoint. First converts a given distance s to a corresponding t used in the formula.
-    **/
+     **/
     public Vector getTangent(double s, int laneNr) {
 
         double t;
