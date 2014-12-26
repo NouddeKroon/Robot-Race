@@ -1,54 +1,88 @@
+import com.jogamp.opengl.util.texture.Texture;
 import robotrace.Vector;
-
 import javax.media.opengl.GL2;
+
+import static javax.media.opengl.GL2GL3.*;
 
 /**
  * Implementation of the terrain.
  */
 class Terrain {
     boolean displaylistIsSet;
+    Texture landscape;
 
     /**
      * Can be used to set up a display list.
      */
     public Terrain() {
+
+    }
+
+    public void setTexture(Texture landscape) {
+        this.landscape = landscape;
     }
 
     /**
-     * Draws the terrain.
+     * Draws the terrain. It calls the displaylist to draw itself, if it's already set, otherwise it enables the texture,
+     * calls drawTerrain and stores it all in the displaylist.
      */
     public void draw(GL2 gl) {
         if (displaylistIsSet) {
-            gl.glColor3d(0,0,1);
+            gl.glColor3d(1,1,1);
             gl.glCallList(2);
         } else {
             gl.glNewList(2, GL2.GL_COMPILE);
+            landscape.enable(gl);
+            landscape.bind(gl);
             drawTerrain(gl);
+            landscape.disable(gl);
             gl.glEndList();
             displaylistIsSet = true;
         }
     }
 
+    /**
+     * Method that draws the terrain. Only gets called once, afterwards the terrain is drawn by displaylist.
+     */
     private void drawTerrain(GL2 gl){
         float stepSize = 0.20f;
-        gl.glColor3d(0,0,1);
         Vector normal;
+        gl.glColor3d(1,1,1);                            //Set color to white so it wont interfere with texture.
 
+        //Simple algorithm to draw the surface. Normalize the height to [0,1] for texture coordinates.
         for (float x = -20; x<20; x+=stepSize) {
             gl.glBegin(gl.GL_TRIANGLE_STRIP);
             for (float y = -20; y<=20; y+=stepSize) {
 
+
                 normal = getNormal(x,y);
                 gl.glNormal3f((float)normal.x(),(float)normal.y(),(float)normal.z());
+                gl.glTexCoord1f((heightAt(x, y) + 1f) / 2f);
                 gl.glVertex3f(x, y, heightAt(x, y));
 
                 normal = getNormal(x+stepSize, y);
                 gl.glNormal3f((float) normal.x(), (float)normal.y(),(float)normal.z());
+                gl.glTexCoord1f((heightAt(x+stepSize,y)+1f)/2f);
                 gl.glVertex3f(x+stepSize,y,heightAt(x+stepSize,y));
 
             }
             gl.glEnd();
+
+
+
+
         }
+
+        //Draw the water surface as a single quad.
+        gl.glNormal3f(0,0,1f);
+        gl.glColor4d(0,0,1,0.5);
+        gl.glBegin(GL_QUADS);
+        gl.glVertex3f(-20,-20,0);
+        gl.glVertex3f(-20,20,0);
+        gl.glVertex3f(20,20,0);
+        gl.glVertex3f(20,-20,0);
+        gl.glEnd();
+
     }
 
     /**

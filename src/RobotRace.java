@@ -6,7 +6,12 @@
  * Noud de Kroon
  */
 
+import com.jogamp.opengl.util.texture.Texture;
+import com.jogamp.opengl.util.texture.TextureIO;
 import robotrace.Base;
+
+import java.io.File;
+import java.io.IOException;
 
 import static javax.media.opengl.GL2.*;
 
@@ -89,6 +94,8 @@ public class RobotRace extends Base {
      * Keep track of last time the scene was drawn.
      */
     private long lastTimeSceneDrawn = 0;
+
+    private Texture landscape;
 
 //    private long startTimeDrawing = 0;
 
@@ -175,6 +182,10 @@ public class RobotRace extends Base {
 
         //Generate the 2 display lists we use.
         gl.glGenLists(2);
+
+        //Try to load the terrain colour texture, give it to the terrain object.
+        landscape = loadTexture("terrainTexture.jpg");
+        terrain.setTexture(landscape);
     }
 
     /**
