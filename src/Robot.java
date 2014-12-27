@@ -1,4 +1,5 @@
 import com.jogamp.opengl.util.gl2.GLUT;
+import com.jogamp.opengl.util.texture.Texture;
 import robotrace.GlobalState;
 import robotrace.Vector;
 
@@ -22,6 +23,9 @@ class Robot {
 
     //Maintain which track is currently selected.
     private int trackNr;
+
+    static Texture headTex;
+    static Texture torsoTex;
 
     double speed = 10 + 2 * (new Random().nextDouble() - 0.5); // m/s
     double inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
@@ -166,6 +170,10 @@ class Robot {
             gl.glEnd();
 
         } else {
+            double texHeightOffset = 0;
+            double texWidthOffset = 0;
+            double texWidth = 0.5d;
+            double texHeight = 0.5d;
 
             //Draw the neck
             gl.glColor3d(neckColor[0], neckColor[1], neckColor[2]);         //Set the color to the neck color.
@@ -180,17 +188,61 @@ class Robot {
                 method makeFaceVertex4 to draw the quads, which automatically does the normal vectors, as long as we
                 make sure to define the vertices in a counterclockwise fashion (otherwise normal is inverted). */
             gl.glColor3f(headColor[0], headColor[1], headColor[2]);         //Set color to color of head.
+
+            headTex.bind(gl);
             gl.glBegin(GL_QUADS);                                           //Start drawing quads.
+
+            final int FRONT = 0, BACK = 1, TOP_LEFT = 0, TOP_RIGHT = 1, BOTTOM_LEFT = 2, BOTTOM_RIGHT = 3;
+            double[][][] coords = { /* coords of front face: */ {
+                    {-0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,},   // Top Left
+                    {0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,},    // Top Right
+                    {-0.5 * headWidth, headDepth, 0.5 * neckSize,},                // Bottom left
+                    {0.5 * headWidth, headDepth, 0.5 * neckSize,},                 // Bottom Right
+            }, {
+                    /* coords of back face: */
+                    {-0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,},  // Top Left
+                    {0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,},   // Top Right
+                    {-0.3 * headWidth, -headDepth, neckSize,},                     // Bottom Left
+                    {0.3 * headWidth, -headDepth, neckSize,},                      // Bottom Right
+            }
+            };
+
             //Draw front side of head
-            Util.makeFaceVertex4(gl, 0.5 * headWidth, headDepth, 0.5 * neckSize,
-                    -0.5 * headWidth, headDepth, 0.5 * neckSize,
-                    -0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,
-                    0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight);
+            Util.setNormalVertex3(gl,
+                    coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
+                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                    coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+            gl.glTexCoord2d(0, 1.0);
+            gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
+            gl.glTexCoord2d(0.5, 1.0);
+            gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
+            gl.glTexCoord2d(0.5, 0.5);
+            gl.glVertex3d(coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
+            gl.glTexCoord2d(0, 0.5);
+            gl.glVertex3d(coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+
+//            Util.makeFaceVertex4(gl, 0.5 * headWidth, headDepth, 0.5 * neckSize,
+//                    -0.5 * headWidth, headDepth, 0.5 * neckSize,
+//                    -0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,
+//                    0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight);
             //Draw back side of head
-            Util.makeFaceVertex4(gl, 0.3 * headWidth, -headDepth, neckSize,
-                    0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
-                    -0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
-                    -0.3 * headWidth, -headDepth, neckSize);
+            Util.setNormalVertex3(gl,
+                    coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2],
+                    coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2],
+                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+
+            gl.glTexCoord2d(0.5, 1.0);
+            gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+            gl.glTexCoord2d(1, 1.0);
+            gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+            gl.glTexCoord2d(1, 0.5);
+            gl.glVertex3d(coords[BACK][BOTTOM_RIGHT][0], coords[BACK][BOTTOM_RIGHT][1], coords[BACK][BOTTOM_RIGHT][2]);
+            gl.glTexCoord2d(0.5, 0.5);
+            gl.glVertex3d(coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
+//            Util.makeFaceVertex4(gl, 0.3 * headWidth, -headDepth, neckSize,
+//                    0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
+//                    -0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,
+//                    -0.3 * headWidth, -headDepth, neckSize);
 
 
             //Draw right side of head
