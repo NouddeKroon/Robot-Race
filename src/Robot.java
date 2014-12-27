@@ -975,7 +975,7 @@ class Robot {
     private void drawTorso(GL2 gl, GLUT glut) {
         // The coordinate in the middle of the between the two hip joints
         Vector centerBottom = new Vector(0, 0, -0.25f);
-        double depth = 0.35;
+        final double depth = 0.35 / 2;
         double spaceToShoulderJoint = 0.05;
 
         if (gs.showStick) {
@@ -1009,19 +1009,111 @@ class Robot {
             Util.translate(gl, leftShoulder.scale(-1));
 
             // Draw the main beam making up the torso. Scale according to above defined dimensions for the torso
-            gl.glPushMatrix();
-            gl.glScaled(Math.abs(rightShoulder.x()) + Math.abs(leftShoulder.x()) - spaceToShoulderJoint,
-                    depth,
-                    Math.abs(rightHip.z()) + neck.z());
-            glut.glutSolidCube(1);
-            gl.glPopMatrix();
+            double width = (Math.abs(rightShoulder.x()) + Math.abs(leftShoulder.x()) - 2 * spaceToShoulderJoint) / 2;
+            double height = (Math.abs(rightHip.z()) + neck.z()) / 2;
+
+            final int FRONT = 0, BACK = 1, TOP_LEFT = 0, TOP_RIGHT = 1, BOTTOM_LEFT = 2, BOTTOM_RIGHT = 3;
+            double[][][] coords = { /* coords of front face: */ {
+                    {-width, depth, height,},   // Top Left
+                    {width, depth, height,},    // Top Right
+                    {-width, depth, -height,},  // Bottom left
+                    {width, depth, -height,},   // Bottom Right
+            }, {
+                    /* coords of back face: */
+                    {-width, -depth, height,},  // Top Left
+                    {width, -depth, height,},   // Top Right
+                    {-width, -depth, -height,}, // Bottom Left
+                    {width, -depth, -height,},  // Bottom Right
+            }
+            };
+
+            torsoTex.enable(gl);
+            torsoTex.bind(gl);
+            gl.glBegin(GL_QUADS);
+
+            //Draw front side of head
+            Util.setNormalVertex3(gl,
+                    coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
+                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                    coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+            gl.glTexCoord2d(0, 1.0);
+            gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
+            gl.glTexCoord2d(0.5, 1.0);
+            gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
+            gl.glTexCoord2d(0.5, 0.5);
+            gl.glVertex3d(coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
+            gl.glTexCoord2d(0, 0.5);
+            gl.glVertex3d(coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+
+            //Draw back side of head
+            Util.setNormalVertex3(gl,
+                    coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2],
+                    coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2],
+                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+
+            gl.glTexCoord2d(0.5, 1.0);
+            gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+            gl.glTexCoord2d(1, 1.0);
+            gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+            gl.glTexCoord2d(1, 0.5);
+            gl.glVertex3d(coords[BACK][BOTTOM_RIGHT][0], coords[BACK][BOTTOM_RIGHT][1], coords[BACK][BOTTOM_RIGHT][2]);
+            gl.glTexCoord2d(0.5, 0.5);
+            gl.glVertex3d(coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
+
+            //Draw left side of head
+            Util.setNormalVertex3(gl,
+                    coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
+                    coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2],
+                    coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+
+            gl.glTexCoord2d(0, 0.5);
+            gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
+            gl.glTexCoord2d(0.5, 0.5);
+            gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+            gl.glTexCoord2d(0.5, 0.0);
+            gl.glVertex3d(coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
+            gl.glTexCoord2d(0, 0.0);
+            gl.glVertex3d(coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+
+            //Draw right side of head
+            Util.setNormalVertex3(gl,
+                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2],
+                    coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
+
+            gl.glTexCoord2d(0, 0.5);
+            gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
+            gl.glTexCoord2d(0.5, 0.5);
+            gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+            gl.glTexCoord2d(0.5, 0.0);
+            gl.glVertex3d(coords[BACK][BOTTOM_RIGHT][0], coords[BACK][BOTTOM_RIGHT][1], coords[BACK][BOTTOM_RIGHT][2]);
+            gl.glTexCoord2d(0, 0.0);
+            gl.glVertex3d(coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
+
+            //Draw top of head
+            Util.setNormalVertex3(gl,
+                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                    coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
+                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+
+            gl.glTexCoord2d(0.5, 0.5);
+            gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
+            gl.glTexCoord2d(0.5, 0.0);
+            gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+            gl.glTexCoord2d(1.0, 0.0);
+            gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+            gl.glTexCoord2d(1.0, 0.5);
+            gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
+            gl.glEnd();
+
+            torsoTex.disable(gl);
 
             // Place a "screen" on the front face
             gl.glPushMatrix();
             gl.glColor3f(torsoScreenColor[0], torsoScreenColor[1], torsoScreenColor[2]);
 
             // Scale and translate relative to torso specification
-            gl.glTranslated(0, 0.55 * depth, -0.75 * Math.abs(rightHip.z()) + neck.z());
+            gl.glTranslated(0, depth, -0.75 * Math.abs(rightHip.z()) + neck.z());
             gl.glScaled((Math.abs(rightShoulder.x()) + Math.abs(leftShoulder.x()) - spaceToShoulderJoint) * 0.75,
                     0.02,
                     (Math.abs(rightHip.z()) + neck.z()) * 0.5);
@@ -1029,7 +1121,7 @@ class Robot {
             gl.glPopMatrix();
 
             // Place a nob on the front face
-            gl.glTranslated(0.55 * Math.abs(rightShoulder.x()), 0.5 * depth, 0.55 * rightHip.z());
+            gl.glTranslated(0.55 * Math.abs(rightShoulder.x()), depth, 0.55 * rightHip.z());
             gl.glRotated(-90, 1, 0, 0);
             glut.glutSolidCylinder(0.02, 0.01, 10, 10);
 
