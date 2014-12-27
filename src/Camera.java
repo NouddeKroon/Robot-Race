@@ -245,17 +245,14 @@ class MotorcycleRobotCam extends Cam {
     }
 
     public Vector getCenterPoint(double t) {
-        // Look 4 meters ahead and 1 to the right.
-        return robot.pos.add(robot.tangent.scale(4))
-                        .add(robot.tangent.cross(robot.normal))
-                        .add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
+        // The Robot's head is the focus of the camera.
+        return robot.pos.add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
     }
 
     public Vector getEyePoint(double t) {
-        // Look from 1 meter behind and 1 to the right.
-        return robot.pos.add(robot.tangent.scale(-1))
-                        .add(robot.tangent.cross(robot.normal))
-                        .add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
+        // The eye is 5 meters to the side of the robot.
+        return robot.pos.add(robot.tangent.cross(robot.normal.scale(5)))
+                .add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
     }
 
     public Vector getUp(double t) {
