@@ -237,6 +237,7 @@ public class RobotRace extends Base {
                 camera.up.x(), camera.up.y(), camera.up.z());
     }
 
+
     /**
      * Draws the entire scene.
      */

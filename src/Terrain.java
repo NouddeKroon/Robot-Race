@@ -32,10 +32,9 @@ class Terrain {
             gl.glCallList(2);
         } else {
             gl.glNewList(2, GL2.GL_COMPILE);
-            landscape.enable(gl);
-            landscape.bind(gl);
+
             drawTerrain(gl);
-            landscape.disable(gl);
+
             gl.glEndList();
             displaylistIsSet = true;
         }
@@ -48,6 +47,8 @@ class Terrain {
         float stepSize = 0.20f;
         Vector normal;
         gl.glColor3d(1,1,1);                            //Set color to white so it wont interfere with texture.
+        landscape.enable(gl);
+        landscape.bind(gl);
 
         //Simple algorithm to draw the surface. Normalize the height to [0,1] for texture coordinates.
         for (float x = -20; x<20; x+=stepSize) {
@@ -67,15 +68,12 @@ class Terrain {
 
             }
             gl.glEnd();
-
-
-
-
         }
+        landscape.disable(gl);
 
         //Draw the water surface as a single quad.
         gl.glNormal3f(0,0,1f);
-        gl.glColor4d(0,0,1,0.5);
+        gl.glColor4d(0.5,0.5,0.5,0.5);
         gl.glBegin(GL_QUADS);
         gl.glVertex3f(-20,-20,0);
         gl.glVertex3f(-20,20,0);
