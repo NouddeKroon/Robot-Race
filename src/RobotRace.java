@@ -177,6 +177,9 @@ public class RobotRace extends Base {
         head = loadTexture("head.jpg");
         torso = loadTexture("torso.jpg");
 
+        Robot.headTex = head;
+        Robot.torsoTex = torso;
+
 //        startTimeDrawing = System.nanoTime();
         lastTimeSceneDrawn = System.nanoTime();
 

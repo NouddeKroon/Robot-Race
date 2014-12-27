@@ -45,8 +45,7 @@ class Util {
         gl.glMultMatrixd(rotMatrix, 0);
     }
 
-    // Method to calculate and set the normal for a face defined by 3 vertices
-    static void makeFaceVertex3(GL2 gl,
+    static void setNormalVertex3(GL2 gl,
                                 double v1x, double v1y, double v1z,
                                 double v2x, double v2y, double v2z,
                                 double v3x, double v3y, double v3z) {
@@ -67,6 +66,17 @@ class Util {
         double normalZ = vec1x * vec2y - vec1y * vec2x;
 
         gl.glNormal3d(normalX, normalY, normalZ);
+    }
+
+    // Method to calculate and set the normal for a face defined by 3 vertices
+    static void makeFaceVertex3(GL2 gl,
+                                double v1x, double v1y, double v1z,
+                                double v2x, double v2y, double v2z,
+                                double v3x, double v3y, double v3z) {
+        setNormalVertex3(gl,
+                v1x, v1y, v1z,
+                v2x, v2y, v2z,
+                v3x, v3y, v3z);
 
         gl.glVertex3d(v1x, v1y, v1z);
         gl.glVertex3d(v2x, v2y, v2z);
