@@ -210,9 +210,8 @@ class Robot {
             //Draw front side of head
             Util.setNormalVertex3(gl,
                     coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
-                    coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2],
-                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
-
+                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                    coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
             gl.glTexCoord2d(0, 1.0);
             gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
             gl.glTexCoord2d(0.5, 1.0);
@@ -229,8 +228,8 @@ class Robot {
             //Draw back side of head
             Util.setNormalVertex3(gl,
                     coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2],
-                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2],
-                    coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
+                    coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2],
+                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
 
             gl.glTexCoord2d(0.5, 1.0);
             gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
