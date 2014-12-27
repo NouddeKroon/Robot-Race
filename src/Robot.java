@@ -188,8 +188,9 @@ class Robot {
                 method makeFaceVertex4 to draw the quads, which automatically does the normal vectors, as long as we
                 make sure to define the vertices in a counterclockwise fashion (otherwise normal is inverted). */
             gl.glColor3f(headColor[0], headColor[1], headColor[2]);         //Set color to color of head.
-
+            headTex.enable(gl);
             headTex.bind(gl);
+            gl.glColor3f(1,1,1);
             gl.glBegin(GL_QUADS);                                           //Start drawing quads.
 
             final int FRONT = 0, BACK = 1, TOP_LEFT = 0, TOP_RIGHT = 1, BOTTOM_LEFT = 2, BOTTOM_RIGHT = 3;
@@ -270,7 +271,7 @@ class Robot {
                     -0.5 * headWidth, headDepth, 0.5 * neckSize);
 
             gl.glEnd();             //We are done drawing quads.
-
+            headTex.disable(gl);
             //Draw antenna.
             gl.glPushMatrix();                  //Push a new matrix.
             gl.glTranslated(-0.25 * headWidth, -0.25 * headDepth, neckSize + 0.8 * headHeight); //Translate to location of antenna.
