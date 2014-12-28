@@ -174,11 +174,14 @@ public class RobotRace extends Base {
         // Try to load four textures, add more if you like.
         track = loadTexture("track.jpg");
         brick = loadTexture("brick.jpg");
+//        TestTrack.brick = brick;
         head = loadTexture("head.jpg");
         torso = loadTexture("torso.jpg");
 
         Robot.headTex = head;
         Robot.torsoTex = torso;
+        Track.brick = brick;
+        Track.track = track;
 
 //        startTimeDrawing = System.nanoTime();
         lastTimeSceneDrawn = System.nanoTime();

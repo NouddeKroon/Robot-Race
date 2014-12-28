@@ -50,6 +50,7 @@ class Terrain {
         landscape.enable(gl);
         landscape.bind(gl);
 
+
         //Simple algorithm to draw the surface. Normalize the height to [0,1] for texture coordinates.
         for (float x = -20; x<20; x+=stepSize) {
             gl.glBegin(gl.GL_TRIANGLE_STRIP);
@@ -73,7 +74,7 @@ class Terrain {
 
         //Draw the water surface as a single quad.
         gl.glNormal3f(0,0,1f);
-        gl.glColor4d(0.5,0.5,0.5,0.5);
+        gl.glColor4d(0.5,0.5,0.7,0.5);
         gl.glBegin(GL_QUADS);
         gl.glVertex3f(-20,-20,0);
         gl.glVertex3f(-20,20,0);
@@ -97,6 +98,7 @@ class Terrain {
     private Vector getNormal(float x, float y) {
         Vector tangentX = new Vector(1,0,-0.3*0.6 * Math.sin(0.3 * x + 0.2 * y) - 0.4 * Math.sin(x - 0.5 * y));
         Vector tangentY = new Vector(0,1,-0.2*0.6* Math.sin(0.3 * x + 0.2 * y) + 0.2 * Math.sin(x - 0.5 * y));
+
         Vector normal = tangentX.cross(tangentY);
         if (normal.length() == 0 || normal.z() == 0) {
             System.out.println("ERROR");

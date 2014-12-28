@@ -37,7 +37,6 @@ class RaceTrack {
     public void draw(GL2 gl) {
         updateTrackList(gl);
         if (!displayListDrawn) {
-
             gl.glNewList(1, GL2.GL_COMPILE);
             trackList[trackNr].draw(gl);
             gl.glEndList();
