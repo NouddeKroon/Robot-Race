@@ -309,13 +309,15 @@ class Transition extends Cam {
         Vector p0 = cam0.getCenterPoint(t);
         Vector p1 = cam1.getCenterPoint(t);
 
+        // Calculate a weighted center point between the 2 endpoints.
         Vector direction = p1.subtract(p0);
         Vector weightedCenter = p0.add(direction.scale(Math.min(t / time, 1)));
+
+        // Calculate a vector from the eye to the calculated center and normalize.
         Vector eyeTowardCenter = weightedCenter.subtract(getEyePoint(t)).normalized();
+        // To also interpolate the distortion interpolate between the distances between eye and center.
         double weightCamDist = Math.max(1 - t/time, 0) * initDist + Math.min(t / time, 1) * finalDist;
 
-        // At t=0 p1 will have weight 0 and center will be p0.
-        // At t>=time the center will be p0 + 1 * p1;
         return getEyePoint(t).add(eyeTowardCenter.scale(weightCamDist));
     }
 
