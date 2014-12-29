@@ -292,11 +292,17 @@ class Transition extends Cam {
     Cam cam1;
     // Time the animation takes, in nanoseconds.
     double time;
+    private double initDist;
+    private double finalDist;
+
 
     Transition(Cam cam0, Cam cam1, double t) {
         this.cam0 = cam0;
         this.cam1 = cam1;
         time = t;
+
+        initDist = cam0.getCenterPoint(0).subtract(cam0.getEyePoint(0)).length();
+        finalDist = cam1.getCenterPoint(time).subtract(cam1.getEyePoint(time)).length();
     }
 
     public Vector getCenterPoint(double t) {
@@ -304,10 +310,13 @@ class Transition extends Cam {
         Vector p1 = cam1.getCenterPoint(t);
 
         Vector direction = p1.subtract(p0);
+        Vector weightedCenter = p0.add(direction.scale(Math.min(t / time, 1)));
+        Vector eyeTowardCenter = weightedCenter.subtract(getEyePoint(t)).normalized();
+        double weightCamDist = Math.max(1 - t/time, 0) * initDist + Math.min(t / time, 1) * finalDist;
 
         // At t=0 p1 will have weight 0 and center will be p0.
         // At t>=time the center will be p0 + 1 * p1;
-        return p0.add(direction.scale(Math.min(t / time, 1)));
+        return getEyePoint(t).add(eyeTowardCenter.scale(weightCamDist));
     }
 
     public Vector getEyePoint(double t) {
