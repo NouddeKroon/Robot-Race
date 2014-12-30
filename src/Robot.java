@@ -27,7 +27,7 @@ class Robot {
     static Texture headTex;
     static Texture torsoTex;
 
-    double speed = 10 + 2 * (new Random().nextDouble() - 0.5); // m/s
+    double baseSpeed = 20 + 4 * (new Random().nextDouble() - 0.5); // m/s
     double inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
 
     double distCovered = 0; // in meters
