@@ -59,8 +59,8 @@ class Robot {
     double lowerLegAngle = -25;
     double upperLegAngle = 15;
 
-    float[] lowerArmRotate = {20, 1, 1, 0};  // Rotation for glRotate. This used by drawArm to rotate the lower arm
-
+    LimbRotation upperArmRotate = new LimbRotation(upperToLowerArm.length(), -22.5, 37.5);
+    LimbRotation lowerArmRotate = new LimbRotation(lowerArmToHand.length(), -10, 50);
     //Head colors
     float[] neckColor;
     float[] headColor;
@@ -87,6 +87,11 @@ class Robot {
     float[] jointUpperLowerLegColor;
     float[] lowerLegColor;
     float[] footColor;
+
+    enum Side {
+        Left,
+        Right
+    }
 
     /**
      * The material from which this robot is built.
@@ -125,11 +130,13 @@ class Robot {
 
         double posNegIncline = tangent.z() >= 0 ? 1 : -1;
         double inclination = posNegIncline * Math.asin(tangent.cross(projectedTangent).length()) / (0.5 * Math.PI);
+        double speed = (1 + (-1) * inclinationFactor * inclination) * baseSpeed;
+        double dist = (timeDiff / 10e9) * speed;
 
-        double dist = (timeDiff / 10e9) * (1 + (-1) * inclinationFactor * inclination) * speed;
         distCovered += dist;
 
-//        System.out.println("inc: " + inclination + " dist: " + dist + " speed: " + (1 + (-1) * inclinationFactor * inclination) * speed);
+        double angle = upperArmRotate.rotateDist(0.2 * dist);
+        lowerArmRotate.addAngle(angle / upperArmRotate.getMaxDelta() * lowerArmRotate.getMaxDelta());
 
         pos = track.getPositionOnLane(distCovered, trackLane);
         tangent = track.getTangent(distCovered, trackLane);
@@ -346,7 +353,7 @@ class Robot {
 
     // Draw the robot's arm.
     // The arm is drawn with its shoulder joint centered on the x-y plane hanging down from the origin
-    private void drawArm(GL2 gl, GLUT glut) {
+    private void drawArm(GL2 gl, GLUT glut, Side side) {
         double armRadius = 0.05;
         double elbowRadius = 0.055;
 
@@ -368,16 +375,19 @@ class Robot {
         }
 
         // Draw the lower arm at the position of the center of the elbow joint and apply a rotation
+        gl.glPushMatrix();
         Util.translate(gl, upperToLowerArm);
-        gl.glRotated(lowerArmRotate[0], lowerArmRotate[1], lowerArmRotate[2], lowerArmRotate[3]);
-        drawLowerArm(gl, glut);
-        gl.glRotated(-lowerArmRotate[0], lowerArmRotate[1], lowerArmRotate[2], lowerArmRotate[3]);
-        Util.translate(gl, upperToLowerArm.scale(-1));
+        // Give the lower arm a base rotation for a more "natural" stance.
+        gl.glRotated(20, 1, 1, 0);
+        double angle = side == Side.Right ? lowerArmRotate.getAngle() : lowerArmRotate.getAngleHalfPhaseShift();
+        gl.glRotated(angle, 1, 0, 0);
+        drawLowerArm(gl, glut, side);
+        gl.glPopMatrix();
     }
 
     // Draw the robot's lower arm.
     // The lower arm is drawn centered on the x-y plane hanging down from the origin
-    private void drawLowerArm(GL2 gl, GLUT glut) {
+    private void drawLowerArm(GL2 gl, GLUT glut, Side side) {
         // specify the top circle used for the "cut off" cone of the lower arm
         Vector topCirclePos = new Vector(0.02, 0, 0.2);
         double topCircleRadius = 0.1;
@@ -624,12 +634,12 @@ class Robot {
         }
 
         // draw the hand at the wrist joint
-        drawHand(gl, glut);
+        drawHand(gl, glut, side);
     }
 
     // Draw the robot's hand.
     // The hand is drawn centered on the x-y plane hanging down from the origin
-    private void drawHand(GL2 gl, GLUT glut) {
+    private void drawHand(GL2 gl, GLUT glut, Side side) {
         double diskHeight = 0.05;
         double diskRadius = 0.05;
 
@@ -758,7 +768,7 @@ class Robot {
      * coordinate (0,0,0) corresponds with the leg joint connecting the leg to the torso. It assumes that the z
      * direction is straight downwards.
     */
-    private void drawLeg(GL2 gl, GLUT glut) {
+    private void drawLeg(GL2 gl, GLUT glut, Side side) {
         double upperLegWidth = 0.2;
         double torsoJointRadius = 0.1;
 
@@ -785,13 +795,13 @@ class Robot {
 
         //Use upperToLowerLeg vector to translate to joint connecting upper and lower leg, then draw it.
         gl.glTranslated(upperToLowerLeg.x(), upperToLowerLeg.y(), upperToLowerLeg.z());
-        drawLowerLeg(gl, glut);
+        drawLowerLeg(gl, glut, side);
         gl.glPopMatrix();       //Pop the matrix.
     }
 
     //Method that draws the lower leg, and calls the foot to draw itself. It assums that the coordinate (0,0,0)
     //corresponds with the knee joint. It also assumes that the z direction is in the direction of the upper knee.
-    private void drawLowerLeg(GL2 gl, GLUT glut) {
+    private void drawLowerLeg(GL2 gl, GLUT glut, Side side) {
         double lowerLegWidth = 0.2;
         double angleFootLowerLeg = 10;
 
@@ -1211,24 +1221,91 @@ class Robot {
         gl.glPushMatrix();
         gl.glTranslated(rightShoulder.x(), rightShoulder.y(), rightShoulder.z());
         gl.glRotated(-20, 0, 1, 0);
-        drawArm(gl, glut);
+        gl.glRotated(upperArmRotate.getAngle(), 1, 0, 0);
+        drawArm(gl, glut, Side.Right);
         gl.glPopMatrix();
         // For the left arm mirror the right one
         gl.glPushMatrix();
         gl.glScaled(-1, 1, 1);
         gl.glTranslated(rightShoulder.x(), rightShoulder.y(), rightShoulder.z());
         gl.glRotated(-20, 0, 1, 0);
-        drawArm(gl, glut);
+        gl.glRotated(upperArmRotate.getAngleHalfPhaseShift(), 1, 0, 0);
+//        gl.glRotated(calcAngleBetween(upperArmAngle - upperArmAngleDelta, upperArmAngleMin + upperArmAngleDelta, upperArmAngleMin), 1, 0, 0);
+        drawArm(gl, glut, Side.Left);
         gl.glPopMatrix();
 
         // draw the legs relative to the torso
         gl.glTranslated(rightHip.x(), rightHip.y(), rightHip.z());
-        drawLeg(gl, glut);
+        drawLeg(gl, glut, Side.Right);
         gl.glTranslated(-2 * rightHip.x(), 0, 0);
         // yet again the left limb is a mirror image of the right
         gl.glScaled(-1, 1, 1);
-        drawLeg(gl, glut);
+        drawLeg(gl, glut, Side.Left);
 
         gl.glPopMatrix();
+    }
+}
+
+class LimbRotation {
+    private double limbLength;
+    // All angles are in degrees (as that is what openGL uses).
+    private double angle;
+    private double minAngle;
+    private double maxDelta;
+    private double currentDirection = 1;
+
+    LimbRotation(double limbLength, double minAngle, double maxAngle) {
+        this.limbLength = limbLength;
+        this.minAngle = minAngle;
+        this.angle = minAngle;
+        this.maxDelta = maxAngle - minAngle;
+    }
+
+    public double getAngle() {
+        return angle;
+    }
+
+    public double getDeltaAngle() {
+        return angle - minAngle;
+    }
+
+    public double getMinAngle() {
+        return minAngle;
+    }
+
+    public double getMaxDelta() {
+        return maxDelta;
+    }
+
+    public double rotateDist(double dist) {
+        double circlePathLength = Math.toRadians(maxDelta) * limbLength;
+
+        double travelAngle = Math.toDegrees((dist % (2 * circlePathLength)) / limbLength);  // Multiply path by 2 for a complete cycle
+        addAngle(travelAngle);
+        return travelAngle;
+    }
+
+    public double getAngleHalfPhaseShift() {
+        double shiftedAngle = angle + maxDelta;
+
+        if (shiftedAngle > minAngle + maxDelta) {
+            return 2 * (minAngle + maxDelta) - shiftedAngle;
+        } else if (shiftedAngle < minAngle) {
+            return 2 * minAngle - shiftedAngle;
+        } else {
+            return shiftedAngle;
+        }
+    }
+
+    public void addAngle(double addAngle) {
+        angle += currentDirection * (addAngle % (2 * maxDelta));
+
+        if (angle > minAngle + maxDelta) {
+            angle = 2 * (minAngle + maxDelta) - angle;
+            currentDirection *= -1;
+        } else if (angle < minAngle) {
+            angle = 2 * minAngle - angle;
+            currentDirection *= -1;
+        }
     }
 }
