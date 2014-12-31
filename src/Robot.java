@@ -55,12 +55,11 @@ class Robot {
     Vector upperToLowerLeg = new Vector(0, 0, -0.19);
     Vector lowerLegToFoot = new Vector(0, 0, -0.19);
 
-    // Angles between limbs
-    double lowerLegAngle = -25;
-    double upperLegAngle = 15;
-
     LimbRotation upperArmRotate = new LimbRotation(upperToLowerArm.length(), -22.5, 37.5);
     LimbRotation lowerArmRotate = new LimbRotation(lowerArmToHand.length(), -10, 50);
+    LimbRotation upperLegRotate = new LimbRotation(upperToLowerLeg.length(), 0, 40);
+    LimbRotation lowerLegRotate = new LimbRotation(lowerLegToFoot.length(), -40, 5);
+
     //Head colors
     float[] neckColor;
     float[] headColor;
@@ -107,6 +106,9 @@ class Robot {
         this.track = track;
         this.trackLane = trackLane;
         this.gs = gs;
+
+        // Add phase shift of 1/8 period as offset to the upper leg rotation for more natural looking movement.
+        lowerLegRotate.addAngle(0.25 * lowerLegRotate.getMaxDelta());
     }
 
     public void incTime(long timeDiff) {
@@ -135,8 +137,11 @@ class Robot {
 
         distCovered += dist;
 
-        double angle = upperArmRotate.rotateDist(0.2 * dist);
+        double angle = upperArmRotate.rotateDist(0.25 * dist);
         lowerArmRotate.addAngle(angle / upperArmRotate.getMaxDelta() * lowerArmRotate.getMaxDelta());
+
+        upperLegRotate.addAngle(angle / upperArmRotate.getMaxDelta() * upperLegRotate.getMaxDelta());
+        lowerLegRotate.addAngle(angle / upperArmRotate.getMaxDelta() * lowerLegRotate.getMaxDelta());
 
         pos = track.getPositionOnLane(distCovered, trackLane);
         tangent = track.getTangent(distCovered, trackLane);
@@ -773,7 +778,7 @@ class Robot {
         double torsoJointRadius = 0.1;
 
         gl.glPushMatrix();
-        gl.glRotated(upperLegAngle, 1, 0, 0);                  //Rotate around the upperLegAngle
+        gl.glRotated(side == Side.Left ? upperLegRotate.getAngle() : upperLegRotate.getAngleHalfPhaseShift(), 1, 0, 0);
 
         if (gs.showStick) {
             gl.glColor3d(0, 0, 0);                            //Set color to black for stick figure.
@@ -804,10 +809,11 @@ class Robot {
     private void drawLowerLeg(GL2 gl, GLUT glut, Side side) {
         double lowerLegWidth = 0.2;
         double angleFootLowerLeg = 10;
+        double kneeAngle = side == Side.Left ? lowerLegRotate.getAngle() : lowerLegRotate.getAngleHalfPhaseShift();
 
         if (gs.showStick) {
             gl.glColor3d(0, 0, 0);                    //Set color to black for stick figure.
-            gl.glRotated(lowerLegAngle, 1, 0, 0);      //Rotate around the lowerLegAngle
+            gl.glRotated(kneeAngle, 1, 0, 0);      //Rotate around the lowerLegAngle
             //Draw a sphere using the lowerLegToFoot vector on the joint connecting the foot and the lower leg,
             // and a line to it.
             Util.drawSphere(gl, glut, stickSphereRadius, lowerLegToFoot);
@@ -827,12 +833,12 @@ class Robot {
 
             //Translate to the vertex of the isosceles triangle and rotate so that the y axis is along the median.
             gl.glTranslated(0, -0.5 * lowerLegWidth, 0);
-            gl.glRotated(0.5 * lowerLegAngle, 1, 0, 0);
+            gl.glRotated(0.5 * kneeAngle, 1, 0, 0);
 
-            //Set color, calculate the median and base lengths of triangle using leg width and angle between legs.
+            //Set color, calculate the median and base lengths of triangle using leg width and kneeAngle between legs.
             gl.glColor3f(jointUpperLowerLegColor[0], jointUpperLowerLegColor[1], jointUpperLowerLegColor[2]);
-            double medianLength = lowerLegWidth * Math.cos(Math.toRadians(0.5 * lowerLegAngle));
-            double baseLength = 2 * lowerLegWidth * Math.sin(Math.toRadians(-0.5 * lowerLegAngle));
+            double medianLength = lowerLegWidth * Math.cos(Math.toRadians(0.5 * kneeAngle));
+            double baseLength = 2 * lowerLegWidth * Math.sin(Math.toRadians(-0.5 * kneeAngle));
             //Draw the right side of the joint.
             gl.glBegin(GL_TRIANGLES);
             Util.makeFaceVertex3(gl, 0.5 * lowerLegWidth, 0, 0,
@@ -853,7 +859,7 @@ class Robot {
             gl.glEnd();
 
             //Now we have drawn the joint, we continue by drawing the actual lower leg itself.
-            gl.glRotated(0.5 * lowerLegAngle, 1, 0, 0);                  //Rotate the remaining half angle.
+            gl.glRotated(0.5 * kneeAngle, 1, 0, 0);                  //Rotate the remaining half kneeAngle.
             gl.glColor3f(lowerLegColor[0], lowerLegColor[1], lowerLegColor[2]);      //Set color to lower leg color.
             gl.glTranslated(0, 0.5 * lowerLegWidth, -0.5 * lowerLegToFoot.length());    //Translate to the centre of the lower leg.
             gl.glPushMatrix();                                                      //Store current matrix.
