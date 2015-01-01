@@ -95,6 +95,14 @@ public class RobotRace extends Base {
      */
     private long lastTimeSceneDrawn = 0;
 
+    /**
+     * Hold the delta time of the start of drawing of the current frame and the start of drawing of the previous frame.
+     *
+     * At the very start of setView the difference is calculated and is use by the camera and by the animation of
+     * the robots.
+     */
+    private long diffTimeFrames = 0;
+
     private Texture landscape;
 
 //    private long startTimeDrawing = 0;
@@ -199,6 +207,11 @@ public class RobotRace extends Base {
      */
     @Override
     public void setView() {
+        // Calculate the difference in time since the previous moment we were here.
+        long currentTime = System.nanoTime();
+        diffTimeFrames = currentTime - lastTimeSceneDrawn;
+        lastTimeSceneDrawn = currentTime;
+
         // Select part of window.
         gl.glViewport(0, 0, gs.w, gs.h);
 
@@ -216,6 +229,12 @@ public class RobotRace extends Base {
 
         double fovAngley = Math.toDegrees(2 * Math.atan(gs.vWidth * ((float) gs.h / (float) gs.w) / (2 * gs.vDist)));
         glu.gluPerspective(fovAngley, (float) gs.w / (float) gs.h, 0.1 * gs.vDist, 10.0 * gs.vDist);
+
+        // Let the camera check if camMode changed and change its mode accordingly.
+        camera.setCamMode(gs.camMode);
+        // The animation should be as smooth as possible and should not depend on the framerate, therefore use the time
+        // delta between the frames to calculated the animations.
+        camera.update(diffTimeFrames);
 
         // Set camera.
         gl.glMatrixMode(GL_MODELVIEW);
@@ -249,12 +268,6 @@ public class RobotRace extends Base {
      */
     @Override
     public void drawScene() {
-        long currentTime = System.nanoTime();
-        long diffTimeFrames = currentTime - lastTimeSceneDrawn;
-
-
-        lastTimeSceneDrawn = currentTime;
-
         // Background color.
         gl.glClearColor(1f, 1f, 1f, 0f);
 
@@ -283,9 +296,6 @@ public class RobotRace extends Base {
         for (int i = 0; i < 4; i++) {
             robots[i].drawAtPos(gl, glut, diffTimeFrames);
         }
-
-        camera.setCamMode(gs.camMode);
-        camera.update(diffTimeFrames);
 
         // Draw terrain
         terrain.draw(gl);
