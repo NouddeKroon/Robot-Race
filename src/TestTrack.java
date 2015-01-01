@@ -102,7 +102,6 @@ public class TestTrack extends Track {
      */
     public void draw(GL2 gl) {
         double dt = 0.01;   //step size.
-        double textureCoordsPrev = 0;
         gl.glColor3f(1f, 1f, 0f);
 
 
@@ -114,7 +113,7 @@ public class TestTrack extends Track {
         Vector outerRingPosNext = nextPoint.add(toLeftNext.scale(-trackWidth / 2.0));
         double outerWallNext = 0;
         double innerWallNext = 0;
-        double[][] laneDistances = new double [4][3];
+        double[] laneDistances = new double [4];
 
 
         for (double t = 0; t < 1; t = t + dt) {
@@ -175,10 +174,10 @@ public class TestTrack extends Track {
 
             track.enable(gl);
             track.bind(gl);
-            //Use the drawTestTrackSurface method to draw the top surface of the track.
             gl.glNormal3d(0, 0, 1);
-            gl.glBegin(gl.GL_TRIANGLE_STRIP);
+
             for (int i = 0; i < 4; i++) {
+
                 Vector firstPoint = innerRingPosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0));
                 Vector secondPoint = innerRingPosNext.add(toLeftNext.scale(-trackWidth * (double)i / 4.0));
                 Vector thirdPoint = innerRingPosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0 - 0.5));
@@ -186,36 +185,32 @@ public class TestTrack extends Track {
                 Vector fifthPoint = innerRingPosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0  - 1.0));
                 Vector sixthPoint = innerRingPosNext.add(toLeftNext.scale(-trackWidth * (double)i / 4.0  - 1.0));
 
-                double lengthOne = (secondPoint.subtract((firstPoint))).length() / 12.0;
-                double lengthTwo = (fourthPoint.subtract(thirdPoint)).length() / 12.0;
-                double lengthThree = (sixthPoint.subtract(fifthPoint)).length() / 12.0;
-                if (laneDistances[i][1]+lengthTwo > 0.875) {
-                    laneDistances[i][0] = 0;
-                    laneDistances[i][1] = 0;
-                    laneDistances[i][2] = 0;
+                double length = (fourthPoint.subtract(thirdPoint)).length() / 12.0;
+                if (laneDistances[i]+length > 0.8333333) {
+                    laneDistances[i] = 0;
                 }
 
-                gl.glTexCoord2d((double)i / 4.0,laneDistances[i][0]);
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                gl.glTexCoord2d((double)i / 4.0,laneDistances[i]);
                 gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
-                laneDistances[i][0]+=lengthOne;
-                gl.glTexCoord2d((double)i / 4.0,laneDistances[i][0]);
+                gl.glTexCoord2d((double)i / 4.0,laneDistances[i]+length);
                 gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
 
 
-                gl.glTexCoord2d((double)i / 4.0 + 0.125,laneDistances[i][1]);
+                gl.glTexCoord2d((double)i / 4.0 + 0.125,laneDistances[i]);
                 gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
-                laneDistances[i][1]+=lengthTwo;
-                gl.glTexCoord2d((double)i / 4.0 + 0.125,laneDistances[i][1]);
+                gl.glTexCoord2d((double)i / 4.0 + 0.125,laneDistances[i]+length);
                 gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
 
 
-                gl.glTexCoord2d((double)i / 4.0+0.250,laneDistances[i][2]);
+                gl.glTexCoord2d((double)i / 4.0+0.250,laneDistances[i]);
                 gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
-                laneDistances[i][2]+=lengthThree;
-                gl.glTexCoord2d((double)i / 4.0+0.25,laneDistances[i][2]);
+                gl.glTexCoord2d((double)i / 4.0+0.25,laneDistances[i]+length);
                 gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
+                laneDistances[i]+=length;
+                gl.glEnd();
             }
-            gl.glEnd();
+
             track.disable(gl);
 
             //Translate 2 meters downwards, and draw the bottom surface, using an inverted normal vector.

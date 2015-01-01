@@ -24,11 +24,12 @@ public class GenericTrack extends Track {
      */
     @Override
     public void draw(GL2 gl) {
+        TextureData data = new TextureData();
         distancesTablePerLane = new double[roadSegments.length + 1][4];
         for (int i = 0; i < roadSegments.length; i++) {
-            double[] distances = roadSegments[i].draw(gl);
+            roadSegments[i].draw(gl, data);
             for (int j = 0; j < 4; j++) {
-                distancesTablePerLane[i + 1][j] = distances[j] + distancesTablePerLane[i][j];
+                distancesTablePerLane[i + 1][j] = data.distanceData[j]  + distancesTablePerLane[i][j];
             }
         }
     }

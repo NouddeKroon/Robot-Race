@@ -88,9 +88,9 @@ public class BezierRoadSegment extends RoadSegment {
      * The method returns an array of length 4 with the total length of each lane.
      */
     @Override
-    double[] draw(GL2 gl) {
+    TextureData draw(GL2 gl, TextureData data) {
         dt = 1 / (double) resolution;    //Step size is determined by resolution.
-        gl.glColor3f(1f, 1f, 0f);
+        gl.glColor3f(1f, 1f, 1f);
 
         //In each iteration of the loop the values of the next loop are passed to the values of the current loop. We
         // pre calculate these for the first loop through:
@@ -113,47 +113,133 @@ public class BezierRoadSegment extends RoadSegment {
             Vector normal = normalNext;
             normalNext = tangentNext.cross(toLeftNext).normalized();
 
+            Track.brick.enable(gl);
+            Track.brick.bind(gl);
             //Draw the left edge of the road, setting the normal vectors in the direction of the toLeft vector.
             gl.glBegin(GL_TRIANGLE_STRIP);
+            data.leftWallTexCoorLast = data.leftWallTexCoorNext;
+            data.leftWallTexCoorNext += leftEdgePosNext.subtract(leftEdgePosCurrent).length() / 8.0;
+            if (data.leftWallTexCoorNext > 1.0){
+                data.leftWallTexCoorLast = 0;
+                data.leftWallTexCoorNext = leftEdgePosNext.subtract(leftEdgePosCurrent).length() / 8.0;
+            }
             for (double z = -1; z <= 1; z = z + 0.25) {
                 gl.glNormal3d(toLeft.x(), toLeft.y(), toLeft.z());
+                gl.glTexCoord2d((z+1)/2.0,data.leftWallTexCoorLast);
                 gl.glVertex3d(leftEdgePosCurrent.x(), leftEdgePosCurrent.y(), leftEdgePosCurrent.z() - 1 + z);
 
                 gl.glNormal3d(toLeftNext.x(), toLeftNext.y(), toLeftNext.z());
+                gl.glTexCoord2d((z+1)/2.0,data.leftWallTexCoorNext);
                 gl.glVertex3d(leftEdgePosNext.x(), leftEdgePosNext.y(), leftEdgePosNext.z() - 1 + z);
             }
             gl.glEnd();
 
             //Draw the right edge of the road, setting the normal vectors in the direction of the toRight vector.
             gl.glBegin(GL_TRIANGLE_STRIP);
+            data.rightWallTexCoorLast = data.rightWallTexCoorNext;
+            data.rightWallTexCoorNext += rightEdgePosNext.subtract(rightEdgeCurrent).length() / 8.0;
+            if (data.rightWallTexCoorNext > 1.0) {
+                data.rightWallTexCoorLast = 0;
+                data.rightWallTexCoorNext = rightEdgePosNext.subtract(rightEdgeCurrent).length() / 8.0;
+            }
             for (double z = -1; z < 1; z = z + 0.1) {
-
                 gl.glNormal3d(-toLeft.x(), -toLeft.y(), -toLeft.z());
+                gl.glTexCoord2d((z+1)/2.0,data.rightWallTexCoorLast);
                 gl.glVertex3d(rightEdgeCurrent.x(), rightEdgeCurrent.y(), rightEdgeCurrent.z() - 1 + z);
 
                 gl.glNormal3d(-toLeftNext.x(), -toLeftNext.y(), -toLeftNext.z());
+                gl.glTexCoord2d((z+1)/2.0,data.rightWallTexCoorNext);
                 gl.glVertex3d(rightEdgePosNext.x(), rightEdgePosNext.y(), rightEdgePosNext.z() - 1 + z);
             }
             gl.glEnd();
+            Track.brick.disable(gl);
 
-            //Draw the top edge of the road, passing all the relevant arguments.
-            drawTrackSurface(leftEdgePosCurrent, toLeft, leftEdgePosNext, toLeftNext, normal, normalNext,
-                    gl, (int) Math.round(t / dt), true);
 
-            //Draw the bottom of the road, translating 2 meters downwards and passing the inverted normals as arguments.
-            //Since we already recorded distances when drawing the top of the road, we set that boolean to false.
-            gl.glPushMatrix();
-            gl.glTranslated(0, 0, -2);
-            drawTrackSurface(leftEdgePosCurrent, toLeft, leftEdgePosNext, toLeftNext, normal.scale(-1),
-                    normalNext.scale(-1), gl, (int) Math.round(t / dt), false);
-            gl.glPopMatrix();
+            Track.track.enable(gl);
+            Track.track.bind(gl);
+
+            for (int i = 0; i < 4; i++) {
+                Vector firstPoint = leftEdgePosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0));
+                Vector secondPoint = leftEdgePosNext.add(toLeftNext.scale(-trackWidth* (double)i / 4.0));
+                Vector thirdPoint = leftEdgePosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0 - 0.5));
+                Vector fourthPoint = leftEdgePosNext.add(toLeftNext.scale(-trackWidth* (double)i / 4.0 - 0.5));
+                Vector fifthPoint = leftEdgePosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0 - 1.0));
+                Vector sixthPoint = leftEdgePosNext.add(toLeftNext.scale(-trackWidth* (double)i / 4.0 - 1.0));
+
+                double length = (fourthPoint.subtract(thirdPoint)).length() / 12.0;
+
+                segmentDistances[i][(int)Math.round(t/dt) + 1] = segmentDistances[i][(int)Math.round(t/dt)] + length * 12.0;
+
+                if (data.roadTexCoors[i][1] + length > 0.83333) {
+                    data.roadTexCoors[i][0] = 0;
+                    data.roadTexCoors[i][1] = length;
+                } else {
+                    data.roadTexCoors[i][0] = data.roadTexCoors[i][1];
+                    data.roadTexCoors[i][1] += length;
+                }
+
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
+                gl.glNormal3d(normal.x(),normal.y(),normal.z());
+                gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
+                gl.glTexCoord2d((double)i / 4.0,data.roadTexCoors[i][1]);
+                gl.glNormal3d(normalNext.x(),normalNext.y(),normalNext.z());
+                gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
+
+
+                gl.glTexCoord2d((double)i / 4.0 + 0.125,data.roadTexCoors[i][0]);
+                gl.glNormal3d(normal.x(), normal.y(), normal.z());
+                gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
+                gl.glNormal3d(normalNext.x(), normalNext.y(), normalNext.z());
+                gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
+
+
+                gl.glTexCoord2d((double)i / 4.0+0.250,data.roadTexCoors[i][0]);
+                gl.glNormal3d(normal.x(), normal.y(), normal.z());
+                gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
+                gl.glNormal3d(normalNext.x(), normalNext.y(), normalNext.z());
+                gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
+                gl.glEnd();
+
+                gl.glPushMatrix();
+                gl.glTranslated(0, 0, -2);
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
+                gl.glNormal3d(-normal.x(),-normal.y(),-normal.z());
+                gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
+                gl.glTexCoord2d((double)i / 4.0,data.roadTexCoors[i][1]);
+                gl.glNormal3d(-normalNext.x(),-normalNext.y(),-normalNext.z());
+                gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
+
+
+                gl.glTexCoord2d((double)i / 4.0 + 0.125,data.roadTexCoors[i][0]);
+                gl.glNormal3d(-normal.x(), -normal.y(), -normal.z());
+                gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
+                gl.glNormal3d(-normalNext.x(), -normalNext.y(), -normalNext.z());
+                gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
+
+
+                gl.glTexCoord2d((double)i / 4.0+0.250,data.roadTexCoors[i][0]);
+                gl.glNormal3d(-normal.x(), -normal.y(), -normal.z());
+                gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
+                gl.glNormal3d(-normalNext.x(), -normalNext.y(), -normalNext.z());
+                gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
+                gl.glEnd();
+
+                gl.glPopMatrix();
+            }
         }
 
         //When drawing the top surface, we recorded the distance values of each lane. We return the final total length
         //of each lane to the calling object.
         double[] distances = {segmentDistances[0][resolution], segmentDistances[1][resolution],
                 segmentDistances[2][resolution], segmentDistances[3][resolution]};
-        return distances;
+        data.distanceData = distances;
+        return data;
     }
 
 

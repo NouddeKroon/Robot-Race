@@ -11,8 +11,10 @@ public abstract class RoadSegment {
     // corresponding to that distance traveled.
     public abstract Vector getCoordinate(double s, int LaneNr);
 
+
+
     //Every road segment is able to draw itself. Returns the distance of the lanes in an array.
-    abstract double[] draw(GL2 gl);
+    abstract TextureData draw(GL2 gl, TextureData data);
 
     //Every road segment is able to return a tangent vector, when given a relative distance travelled on the segment.
     abstract Vector getTangent(double s, int laneNr);

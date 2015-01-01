@@ -20,14 +20,14 @@ public enum TrackCoordinates {
             new BezierRoadSegment(new Vector(-10, 10, 1), new Vector(-20, 20, 1), new Vector(-20, 5, 1), new Vector(-10, -5, 1), 100)}),
 
     LTRACK(new RoadSegment[]{
-            new StraightRoadSegment(new Vector(-10, -10, 1), new Vector(10, -10, 1), 20),
             new BezierRoadSegment(new Vector(10, -10, 1), new Vector(12.5, -10, 1), new Vector(15, -7.5, 1), new Vector(15, -5, 1), 100),
             new StraightRoadSegment(new Vector(15, -5, 1), new Vector(15, 7.5, 1), 20),
             new BezierRoadSegment(new Vector(15, 7.5, 1), new Vector(15, 12.5, 1), new Vector(7.5, 12.5, 1), new Vector(7.5, 7.5, 1), 100),
             new StraightRoadSegment(new Vector(7.5, 7.5, 1), new Vector(7.5, 2.5, 1), 20),
             new BezierRoadSegment(new Vector(7.5, 2.5, 1), new Vector(7.5, 0, 1), new Vector(5, -2.5, 1), new Vector(2.5, -2.5, 1), 100),
             new StraightRoadSegment(new Vector(2.5, -2.5, 1), new Vector(-10, -2.5, 1), 20),
-            new BezierRoadSegment(new Vector(-10, -2.5, 1), new Vector(-15, -2.5, 1), new Vector(-15, -10, 1), new Vector(-10, -10, 1), 100)
+            new BezierRoadSegment(new Vector(-10, -2.5, 1), new Vector(-15, -2.5, 1), new Vector(-15, -10, 1), new Vector(-10, -10, 1), 100),
+            new StraightRoadSegment(new Vector(-10, -10, 1), new Vector(10, -10, 1), 20)
     }),
 
     CUSTOMTRACK(new RoadSegment[]{

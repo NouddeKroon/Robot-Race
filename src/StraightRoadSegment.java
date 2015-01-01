@@ -61,9 +61,9 @@ public class StraightRoadSegment extends RoadSegment {
      * distance vector is this case).
      */
     @Override
-    double[] draw(GL2 gl) {
+    TextureData draw(GL2 gl, TextureData data) {
         dt = 1 / (double) resolution;
-        gl.glColor3f(1f, 1f, 0f);
+        gl.glColor3f(1f, 1f, 1f);
 
         //Calculate the difference vector, the normal and the toLeft vector, which are constant throughout the loop.
         differenceVector = endPoint.subtract(startPoint);
@@ -75,47 +75,124 @@ public class StraightRoadSegment extends RoadSegment {
         Vector nextPoint = startPoint;
         Vector leftWallPosNext = nextPoint.add(toLeft.scale(trackWidth / 2.0));
         Vector rightWallPosNext = nextPoint.add(toLeft.scale(-trackWidth / 2.0));
+        double segmentLength = differenceVector.length() * dt;
         for (double t = 0; t < 1; t = t + dt) {
             //Pass on the "next" variables to the "current" variables, and calculate the new "next" values.
             nextPoint = nextPoint.add(differenceVector.scale(dt));
-            Vector rightWallPosCurrent = leftWallPosNext;
+            Vector leftWallPosCurrent = leftWallPosNext;
             leftWallPosNext = nextPoint.add(toLeft.scale(trackWidth / 2.0));
-            Vector leftWallPosCurrent = rightWallPosNext;
+            Vector rightWallPosCurrent = rightWallPosNext;
             rightWallPosNext = nextPoint.add(toLeft.scale(-trackWidth / 2.0));
 
-            //Draw the right wall.
+            Track.brick.enable(gl);
+            Track.brick.bind(gl);
+            //Draw the left wall.
+            data.leftWallTexCoorLast = data.leftWallTexCoorNext;
+            data.leftWallTexCoorNext += leftWallPosNext.subtract(leftWallPosCurrent).length() / 8.0;
+            if (data.leftWallTexCoorNext > 1.0){
+                data.leftWallTexCoorLast = 0;
+                data.leftWallTexCoorNext = leftWallPosNext.subtract(leftWallPosCurrent).length() / 8.0;
+            }
             gl.glBegin(GL_TRIANGLE_STRIP);
             for (double z = -1; z <= 1; z = z + 0.25) {
                 gl.glNormal3d(toLeft.x(), toLeft.y(), toLeft.z());
-                gl.glVertex3d(rightWallPosCurrent.x(), rightWallPosCurrent.y(), z);
+                gl.glTexCoord2d((z+1)/2.0,data.leftWallTexCoorLast);
+                gl.glVertex3d(leftWallPosCurrent.x(), leftWallPosCurrent.y(), z);
+                gl.glTexCoord2d((z+1)/2.0,data.leftWallTexCoorNext);
                 gl.glVertex3d(leftWallPosNext.x(), leftWallPosNext.y(), z);
             }
             gl.glEnd();
 
-            //Draw the left wall.
+            //Draw the right wall.
+//            data.rightWallTexCoor += rightWallPosNext.subtract(rightWallPosCurrent).length();
             gl.glBegin(GL_TRIANGLE_STRIP);
+            data.rightWallTexCoorLast = data.rightWallTexCoorNext;
+            data.rightWallTexCoorNext += rightWallPosNext.subtract(rightWallPosCurrent).length() / 8.0;
+            if (data.rightWallTexCoorNext > 1.0) {
+                data.rightWallTexCoorLast = 0;
+                data.rightWallTexCoorNext = rightWallPosNext.subtract(rightWallPosCurrent).length() / 8.0;
+            }
             for (double z = -1; z < 1; z = z + 0.1) {
                 gl.glNormal3d(-toLeft.x(), -toLeft.y(), -toLeft.z());
-                gl.glVertex3d(leftWallPosCurrent.x(), leftWallPosCurrent.y(), z);
+                gl.glTexCoord2d((z+1) / 2.0, data.rightWallTexCoorLast);
+                gl.glVertex3d(rightWallPosCurrent.x(), rightWallPosCurrent.y(), z);
+                gl.glTexCoord2d((z+1) / 2.0, data.rightWallTexCoorNext);
                 gl.glVertex3d(rightWallPosNext.x(), rightWallPosNext.y(), z);
             }
             gl.glEnd();
+            Track.brick.disable(gl);
 
-            //Set normalVector and draw the top surface.
-            gl.glNormal3d(normalVector.x(), normalVector.y(), normalVector.z());
-            drawTrackSurface(rightWallPosCurrent, toLeft, leftWallPosNext, gl, (int) Math.round(t / dt));
+            Track.track.enable(gl);
+            Track.track.bind(gl);
 
-            //Translate 2 meters downwards, and draw the bottom surface, setting inverted normal vector.
-            gl.glPushMatrix();
-            gl.glTranslated(0, 0, -2);
-            gl.glNormal3d(-normalVector.x(), -normalVector.y(), -normalVector.z());
-            drawTrackSurface(rightWallPosCurrent, toLeft, leftWallPosNext, gl, (int) Math.round(t / dt));
-            gl.glPopMatrix();
+            for (int i = 0; i < 4; i++) {
+                Vector firstPoint = leftWallPosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0));
+                Vector secondPoint = leftWallPosNext.add(toLeft.scale(-trackWidth * (double)i / 4.0));
+                Vector thirdPoint = leftWallPosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0 - 0.5));
+                Vector fourthPoint = leftWallPosNext.add(toLeft.scale(-trackWidth * (double)i / 4.0 - 0.5));
+                Vector fifthPoint = leftWallPosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0 - 1.0));
+                Vector sixthPoint = leftWallPosNext.add(toLeft.scale(-trackWidth * (double)i / 4.0 - 1.0));
+
+                if (data.roadTexCoors[i][1]+segmentLength / 12.0 > 0.833) {
+                    data.roadTexCoors[i][0] = 0;
+                    data.roadTexCoors[i][1] = segmentLength / 12.0;
+                } else {
+                    data.roadTexCoors[i][0]=data.roadTexCoors[i][1];
+                    data.roadTexCoors[i][1]+=segmentLength/12.0;
+                }
+
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                gl.glNormal3d(0,0,1);
+                gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
+                gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
+                gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][1]);
+                gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
+
+
+                gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][0]);
+                gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
+                gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
+
+
+                gl.glTexCoord2d((double) i / 4.0 + 0.250, data.roadTexCoors[i][0]);
+                gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
+                gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
+                gl.glEnd();
+
+                gl.glPushMatrix();
+                gl.glTranslated(0, 0, -2);
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                gl.glNormal3d(0, 0, -1);
+                gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
+                gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
+                gl.glTexCoord2d((double)i / 4.0,data.roadTexCoors[i][1]);
+                gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
+
+
+                gl.glTexCoord2d((double) i / 4.0 + 0.125,data.roadTexCoors[i][0]);
+                gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
+                gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
+
+
+                gl.glTexCoord2d((double)i / 4.0+0.250,data.roadTexCoors[i][0]);
+                gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
+                gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
+                gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
+                gl.glEnd();
+
+                gl.glPopMatrix();
+
+
+            }
+            Track.track.disable(gl);
         }
 
         //Return the length of each lane in an array, which is just the length of the differenceVector in this case.
-        double[] distances = {differenceVector.length(), differenceVector.length(), differenceVector.length(), differenceVector.length()};
-        return distances;
+        data.distanceData = new double[]{differenceVector.length(), differenceVector.length(), differenceVector.length(), differenceVector.length()};
+        return data;
     }
 
     //Method to draw a surface from left to right.
