@@ -89,9 +89,9 @@ class Camera {
 
         // For the different cam modes set the target
         if (mode == HELICOPTER) {
-            transitionTarget = new HelicopterRobotCam(robots[robotIdx]);
+            transitionTarget = new HelicopterRobotCam(gs, robots[robotIdx]);
         } else if (mode == MOTORCYCLE) {
-            transitionTarget = new MotorcycleRobotCam(robots[robotIdx]);
+            transitionTarget = new MotorcycleRobotCam(gs, robots[robotIdx]);
         } else if (mode == FIRST_PERSON) {
             // Find the last robot by looking for the robot which has traveled the least distance.
             double minDist = Double.MAX_VALUE;
@@ -103,7 +103,7 @@ class Camera {
                 }
             }
 
-            transitionTarget = new FirstPersonRobotCam(robots[robotIdx]);
+            transitionTarget = new FirstPersonRobotCam(gs, robots[robotIdx]);
         } else {  // camMode == DEFAULT
             transitionTarget = new DefaultCam(gs);
         }
@@ -149,15 +149,15 @@ class Camera {
 
                 // The robot from which we get First Person view is only variable in auto mode.
                 if (camMode == FIRST_PERSON) {
-                    transitionTarget = new FirstPersonRobotCam(robots[robotIdx]);
+                    transitionTarget = new FirstPersonRobotCam(gs, robots[robotIdx]);
                 }
             }
 
             if (camMode != DEFAULT) {  // There are no meaningful transitions within DEFAULT mode
                 if (camMode == HELICOPTER) {
-                    transitionTarget = new HelicopterRobotCam(robots[robotIdx]);
+                    transitionTarget = new HelicopterRobotCam(gs, robots[robotIdx]);
                 } else if (camMode == MOTORCYCLE) {
-                    transitionTarget = new MotorcycleRobotCam(robots[robotIdx]);
+                    transitionTarget = new MotorcycleRobotCam(gs, robots[robotIdx]);
                 }
 
                 transitionTime = 2.5e9;
@@ -169,7 +169,6 @@ class Camera {
         center = cam.getCenterPoint(timeElapsed);
         eye = cam.getEyePoint(timeElapsed);
         up = cam.getUp(timeElapsed);
-        gs.vDist = (float) eye.subtract(center).length();
     }
 }
 
@@ -185,7 +184,7 @@ abstract class Cam {
  * on the camera's default mode.
  */
 class DefaultCam extends Cam {
-    GlobalState gs;
+    private GlobalState gs;
 
     DefaultCam(GlobalState gs) {
         this.gs = gs;
@@ -216,9 +215,11 @@ class DefaultCam extends Cam {
 
 // A basic camera which "flies" above its selected robot.
 class HelicopterRobotCam extends Cam {
+    private GlobalState gs;
     private Robot robot;
 
-    HelicopterRobotCam(Robot robot) {
+    HelicopterRobotCam(GlobalState gs, Robot robot) {
+        this.gs = gs;
         this.robot = robot;
     }
 
@@ -228,7 +229,7 @@ class HelicopterRobotCam extends Cam {
 
     public Vector getEyePoint(double t) {
         // Do not view from straight above, as this will give calculation problems (being orthogonal, etc.).
-        return robot.pos.add(new Vector(0.00001, 0, 10));
+        return robot.pos.add(new Vector(0.00001, 0, gs.vDist));
     }
 
     public Vector getUp(double t) {
@@ -238,9 +239,11 @@ class HelicopterRobotCam extends Cam {
 
 // A basic camera which "hangs" along side the selected robot.
 class MotorcycleRobotCam extends Cam {
+    private GlobalState gs;
     private Robot robot;
 
-    MotorcycleRobotCam(Robot robot) {
+    MotorcycleRobotCam(GlobalState gs, Robot robot) {
+        this.gs = gs;
         this.robot = robot;
     }
 
@@ -251,7 +254,7 @@ class MotorcycleRobotCam extends Cam {
 
     public Vector getEyePoint(double t) {
         // The eye is 5 meters to the side of the robot.
-        return robot.pos.add(robot.tangent.cross(robot.normal.scale(5)))
+        return robot.pos.add(robot.tangent.cross(robot.normal.scale(gs.vDist)))
                 .add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
     }
 
@@ -262,23 +265,24 @@ class MotorcycleRobotCam extends Cam {
 
 // A basic camera which acts as if it is mounted on top the selected robot's head.
 class FirstPersonRobotCam extends Cam {
+    private GlobalState gs;
     private Robot robot;
 
-    FirstPersonRobotCam(Robot robot) {
+    FirstPersonRobotCam(GlobalState gs, Robot robot) {
+        this.gs = gs;
         this.robot = robot;
     }
 
     public Vector getCenterPoint(double t) {
-        // Look 5 meters ahead and to a height of 1 meter (relative to base the robot is standing on).
-        return robot.pos.add(robot.tangent.scale(5))
-                .add(new Vector(0, 0, 1));  //FIXME: hack for robot height
+        // Look 5 meters ahead.
+        return robot.pos.add(robot.tangent.scale(gs.vDist - 0.25))
+                .add(new Vector(0, 0, 1.80));  //FIXME: hack for robot height
     }
 
     public Vector getEyePoint(double t) {
         // Look from just the tip of the robot head.
-        return robot.pos.add(robot.tangent.scale(0.1))
+        return robot.pos.add(robot.tangent.scale(0.25))
                 .add(new Vector(0, 0, 1.80));  //FIXME: hack for robot height
-//        return robot.pos.add(new Vector(0, 0, 1.80));  //FIXME: hack for robot height
     }
 
     public Vector getUp(double t) {
