@@ -133,13 +133,15 @@ public class TestTrack extends Track {
             brick.enable(gl);
             brick.bind(gl);
             double innerWall = innerWallNext;
+            float heightAtInnerWall = Terrain.heightAt((float)innerRingPosCurrent.x(),(float)innerRingPosCurrent.y());
+            float heightAtInnerWallNext = Terrain.heightAt((float)innerRingPosNext.x(),(float)innerRingPosNext.y());
             innerWallNext += (innerRingPosNext.subtract(innerRingPosCurrent)).length() / 8.0;
             if (innerWallNext > 1.0) {
                 innerWall = 0.0;
                 innerWallNext = (innerRingPosNext.subtract(innerRingPosCurrent)).length() / 8.0;
             }
             gl.glBegin(GL_TRIANGLE_STRIP);
-            for (double z = -1; z <= 1; z = z + 0.25) {
+            for (double z = 1; z >= -1; z = z - 0.25) {
                 gl.glNormal3d(toLeft.x(), toLeft.y(), toLeft.z());
                 gl.glTexCoord2d((z + 1.0) / 2.0, innerWall);
                 gl.glVertex3d(innerRingPosCurrent.x(), innerRingPosCurrent.y(), z);
@@ -147,11 +149,17 @@ public class TestTrack extends Track {
                 gl.glNormal3d(toLeftNext.x(), toLeftNext.y(), toLeftNext.z());
                 gl.glTexCoord2d((z + 1.0) / 2.0, innerWallNext);
                 gl.glVertex3d(innerRingPosNext.x(), innerRingPosNext.y(), z);
+
+                if (z < heightAtInnerWall && z < heightAtInnerWallNext){
+                    break;
+                }
             }
             gl.glEnd();
 
 
             //Draw the outer wall:
+            float heightAtOuterWall = Terrain.heightAt((float)outerRingPosCurrent.x(),(float)outerRingPosCurrent.y());
+            float heightAtOuterWallNext = Terrain.heightAt((float)outerRingPosNext.x(),(float)outerRingPosNext.y());
             double outerWall = outerWallNext;
             outerWallNext = (outerWallNext + ((outerRingPosNext.subtract(outerRingPosCurrent)).length() / 8.0));
             if (outerWallNext > 1.0) {
@@ -159,7 +167,7 @@ public class TestTrack extends Track {
                 outerWallNext = ((outerRingPosNext.subtract(outerRingPosCurrent)).length() / 8.0);
             }
             gl.glBegin(GL_TRIANGLE_STRIP);
-            for (double z = -1; z <= 1; z = z + 0.25) {
+            for (double z = 1; z >= -1; z = z - 0.25) {
 
                 gl.glNormal3d(-toLeft.x(), -toLeft.y(), -toLeft.z());
                 gl.glTexCoord2d((z + 1.0) / 2.0, outerWall);
@@ -167,6 +175,9 @@ public class TestTrack extends Track {
                 gl.glTexCoord2d((z + 1.0) / 2.0, outerWallNext);
                 gl.glNormal3d(-toLeftNext.x(), -toLeftNext.y(), -toLeftNext.z());
                 gl.glVertex3d(outerRingPosNext.x(), outerRingPosNext.y(), z);
+                if (z < heightAtOuterWall && z < heightAtOuterWallNext) {
+                    break;
+                }
             }
             gl.glEnd();
             brick.disable(gl);
@@ -212,24 +223,6 @@ public class TestTrack extends Track {
             }
 
             track.disable(gl);
-
-            //Translate 2 meters downwards, and draw the bottom surface, using an inverted normal vector.
-            gl.glPushMatrix();
-            gl.glTranslated(0, 0, -2);
-            gl.glNormal3d(0, 0, -1);
-            gl.glBegin(gl.GL_TRIANGLE_STRIP);
-            for (double w = 0; w <= 1.0d; w += dw) {
-                //The next two points to draw between are calculated by adding a scaled toLeft vector to the two innerRingPos
-                // vectors.
-                Vector firstPoint = innerRingPosCurrent.add(toLeft.scale(-trackWidth * w));
-                Vector secondPoint = innerRingPosNext.add(toLeftNext.scale(-trackWidth * w));
-
-                gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
-                gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
-            }
-            gl.glEnd();
-            gl.glPopMatrix();
-
         }
 
     }

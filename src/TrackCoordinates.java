@@ -15,26 +15,26 @@ public enum TrackCoordinates {
 
     CTRACK(new RoadSegment[]{
             new BezierRoadSegment(new Vector(-10, -5, 1), new Vector(-5, -10, 1), new Vector(5, -10, 1), new Vector(10, -5, 1), 50),
-            new BezierRoadSegment(new Vector(10, -5, 1), new Vector(20, 5, 1), new Vector(20, 20, 1), new Vector(10, 10, 1), 100),
+            new BezierRoadSegment(new Vector(10, -5, 1), new Vector(20, 5, 1), new Vector(20, 20, 1), new Vector(10, 10, 1), 50),
             new BezierRoadSegment(new Vector(10, 10, 1), new Vector(5, 5, 1), new Vector(-5, 5, 1), new Vector(-10, 10, 1), 50),
-            new BezierRoadSegment(new Vector(-10, 10, 1), new Vector(-20, 20, 1), new Vector(-20, 5, 1), new Vector(-10, -5, 1), 100)}),
+            new BezierRoadSegment(new Vector(-10, 10, 1), new Vector(-20, 20, 1), new Vector(-20, 5, 1), new Vector(-10, -5, 1), 50)}),
 
     LTRACK(new RoadSegment[]{
-            new BezierRoadSegment(new Vector(10, -10, 1), new Vector(12.5, -10, 1), new Vector(15, -7.5, 1), new Vector(15, -5, 1), 100),
+            new BezierRoadSegment(new Vector(10, -10, 1), new Vector(12.5, -10, 1), new Vector(15, -7.5, 1), new Vector(15, -5, 1), 50),
             new StraightRoadSegment(new Vector(15, -5, 1), new Vector(15, 7.5, 1), 20),
-            new BezierRoadSegment(new Vector(15, 7.5, 1), new Vector(15, 12.5, 1), new Vector(7.5, 12.5, 1), new Vector(7.5, 7.5, 1), 100),
+            new BezierRoadSegment(new Vector(15, 7.5, 1), new Vector(15, 12.5, 1), new Vector(7.5, 12.5, 1), new Vector(7.5, 7.5, 1), 50),
             new StraightRoadSegment(new Vector(7.5, 7.5, 1), new Vector(7.5, 2.5, 1), 20),
-            new BezierRoadSegment(new Vector(7.5, 2.5, 1), new Vector(7.5, 0, 1), new Vector(5, -2.5, 1), new Vector(2.5, -2.5, 1), 100),
+            new BezierRoadSegment(new Vector(7.5, 2.5, 1), new Vector(7.5, 0, 1), new Vector(5, -2.5, 1), new Vector(2.5, -2.5, 1), 50),
             new StraightRoadSegment(new Vector(2.5, -2.5, 1), new Vector(-10, -2.5, 1), 20),
-            new BezierRoadSegment(new Vector(-10, -2.5, 1), new Vector(-15, -2.5, 1), new Vector(-15, -10, 1), new Vector(-10, -10, 1), 100),
+            new BezierRoadSegment(new Vector(-10, -2.5, 1), new Vector(-15, -2.5, 1), new Vector(-15, -10, 1), new Vector(-10, -10, 1), 50),
             new StraightRoadSegment(new Vector(-10, -10, 1), new Vector(10, -10, 1), 20)
     }),
 
     CUSTOMTRACK(new RoadSegment[]{
-            new BezierRoadSegment(new Vector(-10, -10, 1), new Vector(-20, -10, 1), new Vector(-20, 10, 1), new Vector(-10, 10, 1), 100),
-            new BezierRoadSegment(new Vector(-10, 10, 1), new Vector(-5, 10, 1), new Vector(5, -10, 1), new Vector(10, -10, 1), 100),
-            new BezierRoadSegment(new Vector(10, -10, 1), new Vector(20, -10, 1), new Vector(20, 10, 10), new Vector(10, 10, 10), 100),
-            new BezierRoadSegment(new Vector(10, 10, 10), new Vector(5, 10, 10), new Vector(-5, -10, 1), new Vector(-10, -10, 1), 100)});
+            new BezierRoadSegment(new Vector(-10, -10, 1), new Vector(-20, -10, 1), new Vector(-20, 10, 1), new Vector(-10, 10, 1), 200),
+            new BezierRoadSegment(new Vector(-10, 10, 1), new Vector(0, 10, 1), new Vector(0, -10, 1), new Vector(10, -10, 1), 200),
+            new BezierRoadSegment(new Vector(10, -10, 1), new Vector(20, -10, 1), new Vector(20, 10, 10), new Vector(10, 10, 10), 200),
+            new BezierRoadSegment(new Vector(10, 10, 10), new Vector(0, 10, 10), new Vector(0, -10, 1), new Vector(-10, -10, 1), 200)});
 
     RoadSegment[] roadSegments;
 

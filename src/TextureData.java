@@ -6,10 +6,6 @@ class TextureData {
     double leftWallTexCoorNext;
     double rightWallTexCoorLast;
     double rightWallTexCoorNext;
-    double[][] roadTexCoors;
+    double[][] roadTexCoors = new double[4][2];
     double[] distanceData;
-
-    TextureData(){
-        roadTexCoors = new double[4][2];
-    }
 }

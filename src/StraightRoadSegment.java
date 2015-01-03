@@ -65,6 +65,8 @@ public class StraightRoadSegment extends RoadSegment {
         dt = 1 / (double) resolution;
         gl.glColor3f(1f, 1f, 1f);
 
+
+
         //Calculate the difference vector, the normal and the toLeft vector, which are constant throughout the loop.
         differenceVector = endPoint.subtract(startPoint);
         toLeft = Vector.Z.cross(differenceVector).normalized();
@@ -125,6 +127,10 @@ public class StraightRoadSegment extends RoadSegment {
             Track.track.enable(gl);
             Track.track.bind(gl);
 
+            boolean drawBottom = false;
+            if (leftWallPosCurrent.z() > 1.001 || leftWallPosNext.z() > 1.001){
+                drawBottom = true;
+            }
             for (int i = 0; i < 4; i++) {
                 Vector firstPoint = leftWallPosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0));
                 Vector secondPoint = leftWallPosNext.add(toLeft.scale(-trackWidth * (double)i / 4.0));
@@ -142,7 +148,7 @@ public class StraightRoadSegment extends RoadSegment {
                 }
 
                 gl.glBegin(gl.GL_TRIANGLE_STRIP);
-                gl.glNormal3d(0,0,1);
+                gl.glNormal3d(normalVector.x(),normalVector.y(),normalVector.z());
                 gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
                 gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
                 gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][1]);
@@ -161,30 +167,32 @@ public class StraightRoadSegment extends RoadSegment {
                 gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
                 gl.glEnd();
 
-                gl.glPushMatrix();
-                gl.glTranslated(0, 0, -2);
-                gl.glBegin(gl.GL_TRIANGLE_STRIP);
-                gl.glNormal3d(0, 0, -1);
-                gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
-                gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
-                gl.glTexCoord2d((double)i / 4.0,data.roadTexCoors[i][1]);
-                gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
+
+                if (drawBottom) {
+                    gl.glPushMatrix();
+                    gl.glTranslated(0, 0, -2);
+                    gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                    gl.glNormal3d(0, 0, -1);
+                    gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
+                    gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][1]);
+                    gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
 
 
-                gl.glTexCoord2d((double) i / 4.0 + 0.125,data.roadTexCoors[i][0]);
-                gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
-                gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
-                gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][0]);
+                    gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
+                    gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
 
 
-                gl.glTexCoord2d((double)i / 4.0+0.250,data.roadTexCoors[i][0]);
-                gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
-                gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
-                gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
-                gl.glEnd();
+                    gl.glTexCoord2d((double) i / 4.0 + 0.250, data.roadTexCoors[i][0]);
+                    gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
+                    gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
+                    gl.glEnd();
 
-                gl.glPopMatrix();
-
+                    gl.glPopMatrix();
+                }
 
             }
             Track.track.disable(gl);

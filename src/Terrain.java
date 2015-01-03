@@ -44,7 +44,7 @@ class Terrain {
      * Method that draws the terrain. Only gets called once, afterwards the terrain is drawn by displaylist.
      */
     private void drawTerrain(GL2 gl){
-        float stepSize = 0.20f;
+        float stepSize = 0.30f;
         Vector normal;
         gl.glColor3d(1,1,1);                            //Set color to white so it wont interfere with texture.
         landscape.enable(gl);
@@ -87,7 +87,7 @@ class Terrain {
     /**
      * Computes the elevation of the terrain at ({@code x}, {@code y}).
      */
-    private float heightAt(float x, float y) {
+    static float heightAt(float x, float y) {
         return (float)(0.6 * Math.cos(0.3 * x + 0.2 * y) + 0.4 * Math.cos(x - 0.5*y));
     }
 

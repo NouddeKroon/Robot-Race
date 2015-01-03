@@ -20,6 +20,7 @@ public class BezierRoadSegment extends RoadSegment {
     double[][] segmentDistances;
     double trackWidth = 4;
     double dt;
+    int[] previousDistanceIndex = new int[4];
 
 
     BezierRoadSegment(Vector point0, Vector point1, Vector point2, Vector point3, int resolution) {
@@ -43,23 +44,37 @@ public class BezierRoadSegment extends RoadSegment {
         Vector toLeft;
         double t;
 
-        /**
-         * Binary search the segmentDistances for distance we need. It will (almost never) find an exact match, but
-         * will return a negative result = insertionPoint - 1, where insertion point is the first index that is bigger
-         * than the given value.
-        **/
-        int binarySearchResult = Arrays.binarySearch(segmentDistances[laneNr], s);
-        //binarySearch did not find an exact match. Calculate the difference between the distance values in the table
-        //between insertion point - 1 and insertion point. Calculate the overflow. Interpolate a t value between
-        //insertion point - 1 and insertion point:.
-        if (binarySearchResult < 0) {
-            int insertionPoint = -1 - binarySearchResult;
-            double difference = segmentDistances[laneNr][insertionPoint] - segmentDistances[laneNr][insertionPoint - 1];
-            t = (insertionPoint - 1 + (s - segmentDistances[laneNr][insertionPoint - 1]) / difference) * dt;
-        } else {
-            //The binarySearch delivered an exact result.
-            t = binarySearchResult*dt;
+        if (previousDistanceIndex[laneNr] > 0) {
+            if (s < segmentDistances[laneNr][previousDistanceIndex[laneNr]-1]){
+                previousDistanceIndex[laneNr] = 0;
+            }
         }
+
+        while (s >= segmentDistances[laneNr][previousDistanceIndex[laneNr]]) {
+            previousDistanceIndex[laneNr]++;
+        }
+
+
+        double difference = segmentDistances[laneNr][previousDistanceIndex[laneNr]] - segmentDistances[laneNr][previousDistanceIndex[laneNr] - 1];
+        t = (previousDistanceIndex[laneNr] - 1 + (s - segmentDistances[laneNr][previousDistanceIndex[laneNr]-1]) / difference) * dt;
+
+//        /**
+//         * Binary search the segmentDistances for distance we need. It will (almost never) find an exact match, but
+//         * will return a negative result = insertionPoint - 1, where insertion point is the first index that is bigger
+//         * than the given value.
+//        **/
+//        int binarySearchResult = Arrays.binarySearch(segmentDistances[laneNr], s);
+//        //binarySearch did not find an exact match. Calculate the difference between the distance values in the table
+//        //between insertion point - 1 and insertion point. Calculate the overflow. Interpolate a t value between
+//        //insertion point - 1 and insertion point:.
+//        if (binarySearchResult < 0) {
+//            int insertionPoint = -1 - binarySearchResult;
+//            double difference = segmentDistances[laneNr][insertionPoint] - segmentDistances[laneNr][insertionPoint - 1];
+//            t = (insertionPoint - 1 + (s - segmentDistances[laneNr][insertionPoint - 1]) / difference) * dt;
+//        } else {
+//            //The binarySearch delivered an exact result.
+//            t = binarySearchResult*dt;
+//        }
         //Calculate the coordinate at t, the tangent, and the vector to the left in order to give the proper coordinate
         // on the given lane (note that lane 0 is the leftmost lane).
         coordinate = Util.getCubicBezierPnt(t, point0, point1, point2, point3);
@@ -117,13 +132,15 @@ public class BezierRoadSegment extends RoadSegment {
             Track.brick.bind(gl);
             //Draw the left edge of the road, setting the normal vectors in the direction of the toLeft vector.
             gl.glBegin(GL_TRIANGLE_STRIP);
+            float heightAtLeftEdgeCurrent = Terrain.heightAt((float)leftEdgePosCurrent.x(),(float)leftEdgePosCurrent.y());
+            float heightAtLeftEdgeNext = Terrain.heightAt((float)leftEdgePosNext.x(),(float)leftEdgePosNext.y());
             data.leftWallTexCoorLast = data.leftWallTexCoorNext;
             data.leftWallTexCoorNext += leftEdgePosNext.subtract(leftEdgePosCurrent).length() / 8.0;
             if (data.leftWallTexCoorNext > 1.0){
                 data.leftWallTexCoorLast = 0;
                 data.leftWallTexCoorNext = leftEdgePosNext.subtract(leftEdgePosCurrent).length() / 8.0;
             }
-            for (double z = -1; z <= 1; z = z + 0.25) {
+            for (double z = 1; z >= -1; z = z - 0.25) {
                 gl.glNormal3d(toLeft.x(), toLeft.y(), toLeft.z());
                 gl.glTexCoord2d((z+1)/2.0,data.leftWallTexCoorLast);
                 gl.glVertex3d(leftEdgePosCurrent.x(), leftEdgePosCurrent.y(), leftEdgePosCurrent.z() - 1 + z);
@@ -131,6 +148,9 @@ public class BezierRoadSegment extends RoadSegment {
                 gl.glNormal3d(toLeftNext.x(), toLeftNext.y(), toLeftNext.z());
                 gl.glTexCoord2d((z+1)/2.0,data.leftWallTexCoorNext);
                 gl.glVertex3d(leftEdgePosNext.x(), leftEdgePosNext.y(), leftEdgePosNext.z() - 1 + z);
+                if (leftEdgePosCurrent.z() - 1 + z < heightAtLeftEdgeCurrent && leftEdgePosNext.z() - 1 + z < heightAtLeftEdgeNext) {
+                    break;
+                }
             }
             gl.glEnd();
 
@@ -138,11 +158,13 @@ public class BezierRoadSegment extends RoadSegment {
             gl.glBegin(GL_TRIANGLE_STRIP);
             data.rightWallTexCoorLast = data.rightWallTexCoorNext;
             data.rightWallTexCoorNext += rightEdgePosNext.subtract(rightEdgeCurrent).length() / 8.0;
+            float heightAtRightEdgeCurrent = Terrain.heightAt((float)rightEdgeCurrent.x(), (float)rightEdgeCurrent.y());
+            float heightAtRightEdgeNext = Terrain.heightAt((float)rightEdgePosNext.x(), (float)rightEdgePosNext.y());
             if (data.rightWallTexCoorNext > 1.0) {
                 data.rightWallTexCoorLast = 0;
                 data.rightWallTexCoorNext = rightEdgePosNext.subtract(rightEdgeCurrent).length() / 8.0;
             }
-            for (double z = -1; z < 1; z = z + 0.1) {
+            for (double z = 1; z >= -1; z = z - 0.25) {
                 gl.glNormal3d(-toLeft.x(), -toLeft.y(), -toLeft.z());
                 gl.glTexCoord2d((z+1)/2.0,data.rightWallTexCoorLast);
                 gl.glVertex3d(rightEdgeCurrent.x(), rightEdgeCurrent.y(), rightEdgeCurrent.z() - 1 + z);
@@ -150,6 +172,10 @@ public class BezierRoadSegment extends RoadSegment {
                 gl.glNormal3d(-toLeftNext.x(), -toLeftNext.y(), -toLeftNext.z());
                 gl.glTexCoord2d((z+1)/2.0,data.rightWallTexCoorNext);
                 gl.glVertex3d(rightEdgePosNext.x(), rightEdgePosNext.y(), rightEdgePosNext.z() - 1 + z);
+
+                if (rightEdgeCurrent.z() - 1 + z < heightAtRightEdgeCurrent && rightEdgePosNext.z() - 1 + z < heightAtRightEdgeNext){
+                    break;
+                }
             }
             gl.glEnd();
             Track.brick.disable(gl);
@@ -158,6 +184,10 @@ public class BezierRoadSegment extends RoadSegment {
             Track.track.enable(gl);
             Track.track.bind(gl);
 
+            boolean drawBottom = false;
+            if (leftEdgePosCurrent.z() > 1.001 || leftEdgePosNext.z() > 1.001){
+                drawBottom = true;
+            }
             for (int i = 0; i < 4; i++) {
                 Vector firstPoint = leftEdgePosCurrent.add(toLeft.scale(-trackWidth * (double)i / 4.0));
                 Vector secondPoint = leftEdgePosNext.add(toLeftNext.scale(-trackWidth* (double)i / 4.0));
@@ -203,34 +233,36 @@ public class BezierRoadSegment extends RoadSegment {
                 gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
                 gl.glEnd();
 
-                gl.glPushMatrix();
-                gl.glTranslated(0, 0, -2);
-                gl.glBegin(gl.GL_TRIANGLE_STRIP);
-                gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
-                gl.glNormal3d(-normal.x(),-normal.y(),-normal.z());
-                gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
-                gl.glTexCoord2d((double)i / 4.0,data.roadTexCoors[i][1]);
-                gl.glNormal3d(-normalNext.x(),-normalNext.y(),-normalNext.z());
-                gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
+                if (drawBottom) {
+                    gl.glPushMatrix();
+                    gl.glTranslated(0, 0, -2);
+                    gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                    gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][0]);
+                    gl.glNormal3d(-normal.x(), -normal.y(), -normal.z());
+                    gl.glVertex3d(firstPoint.x(), firstPoint.y(), firstPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0, data.roadTexCoors[i][1]);
+                    gl.glNormal3d(-normalNext.x(), -normalNext.y(), -normalNext.z());
+                    gl.glVertex3d(secondPoint.x(), secondPoint.y(), secondPoint.z());
 
 
-                gl.glTexCoord2d((double)i / 4.0 + 0.125,data.roadTexCoors[i][0]);
-                gl.glNormal3d(-normal.x(), -normal.y(), -normal.z());
-                gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
-                gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
-                gl.glNormal3d(-normalNext.x(), -normalNext.y(), -normalNext.z());
-                gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][0]);
+                    gl.glNormal3d(-normal.x(), -normal.y(), -normal.z());
+                    gl.glVertex3d(thirdPoint.x(), thirdPoint.y(), thirdPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0 + 0.125, data.roadTexCoors[i][1]);
+                    gl.glNormal3d(-normalNext.x(), -normalNext.y(), -normalNext.z());
+                    gl.glVertex3d(fourthPoint.x(), fourthPoint.y(), fourthPoint.z());
 
 
-                gl.glTexCoord2d((double)i / 4.0+0.250,data.roadTexCoors[i][0]);
-                gl.glNormal3d(-normal.x(), -normal.y(), -normal.z());
-                gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
-                gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
-                gl.glNormal3d(-normalNext.x(), -normalNext.y(), -normalNext.z());
-                gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
-                gl.glEnd();
+                    gl.glTexCoord2d((double) i / 4.0 + 0.250, data.roadTexCoors[i][0]);
+                    gl.glNormal3d(-normal.x(), -normal.y(), -normal.z());
+                    gl.glVertex3d(fifthPoint.x(), fifthPoint.y(), fifthPoint.z());
+                    gl.glTexCoord2d((double) i / 4.0 + 0.25, data.roadTexCoors[i][1]);
+                    gl.glNormal3d(-normalNext.x(), -normalNext.y(), -normalNext.z());
+                    gl.glVertex3d(sixthPoint.x(), sixthPoint.y(), sixthPoint.z());
+                    gl.glEnd();
 
-                gl.glPopMatrix();
+                    gl.glPopMatrix();
+                }
             }
         }
 
