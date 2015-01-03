@@ -25,6 +25,11 @@ public class StraightRoadSegment extends RoadSegment {
         this.startPoint = startPoint;
         this.endPoint = endPoint;
         this.resolution = resolution;
+
+        //Calculate the difference vector, the normal and the toLeft vector, which are constant throughout the loop.
+        differenceVector = endPoint.subtract(startPoint);
+        toLeft = Vector.Z.cross(differenceVector).normalized();
+        normalVector = differenceVector.cross(toLeft).normalized();
     }
 
     @Override
@@ -64,13 +69,6 @@ public class StraightRoadSegment extends RoadSegment {
     TextureData draw(GL2 gl, TextureData data) {
         dt = 1 / (double) resolution;
         gl.glColor3f(1f, 1f, 1f);
-
-
-
-        //Calculate the difference vector, the normal and the toLeft vector, which are constant throughout the loop.
-        differenceVector = endPoint.subtract(startPoint);
-        toLeft = Vector.Z.cross(differenceVector).normalized();
-        normalVector = differenceVector.cross(toLeft).normalized();
 
         //Precalculate the rightWallPosNext and leftWallPosNext coordinates of the first loop, since the loop passes these
         // to the "current" values in each iterations.

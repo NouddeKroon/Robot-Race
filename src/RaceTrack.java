@@ -35,14 +35,17 @@ class RaceTrack {
      * If the displayListDrawn boolean is already set to true, it just draws the stored list.
      */
     public void draw(GL2 gl) {
+        if (displayList == 0) {
+            displayList = gl.glGenLists(1);
+        }
         updateTrackList(gl);
         if (!displayListDrawn) {
-            gl.glNewList(1, GL2.GL_COMPILE);
+            gl.glNewList(displayList, GL2.GL_COMPILE);
             trackList[trackNr].draw(gl);
             gl.glEndList();
             displayListDrawn = true;
         } else {
-            gl.glCallList(1);
+            gl.glCallList(displayList);
         }
     }
 

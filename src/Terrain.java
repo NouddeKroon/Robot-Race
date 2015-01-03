@@ -10,6 +10,7 @@ import static javax.media.opengl.GL2GL3.*;
 class Terrain {
     boolean displaylistIsSet;
     Texture landscape;
+    int displayList;                    //Variable pointing to the display list.
 
     /**
      * Can be used to set up a display list.
@@ -29,9 +30,10 @@ class Terrain {
     public void draw(GL2 gl) {
         if (displaylistIsSet) {
             gl.glColor3d(1,1,1);
-            gl.glCallList(2);
+            gl.glCallList(displayList);
         } else {
-            gl.glNewList(2, GL2.GL_COMPILE);
+            displayList = gl.glGenLists(1);
+            gl.glNewList(displayList, GL2.GL_COMPILE);
 
             drawTerrain(gl);
 

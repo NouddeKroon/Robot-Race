@@ -194,9 +194,6 @@ public class RobotRace extends Base {
 //        startTimeDrawing = System.nanoTime();
         lastTimeSceneDrawn = System.nanoTime();
 
-        //Generate the 2 display lists we use.
-        gl.glGenLists(2);
-
         //Try to load the terrain colour texture, give it to the terrain object.
         landscape = loadTexture("terrainTexture.jpg");
         terrain.setTexture(landscape);
