@@ -31,10 +31,10 @@ public enum TrackCoordinates {
     }),
 
     CUSTOMTRACK(new RoadSegment[]{
-            new BezierRoadSegment(new Vector(-10, -10, 1), new Vector(-20, -10, 1), new Vector(-20, 10, 1), new Vector(-10, 10, 1), 200),
-            new BezierRoadSegment(new Vector(-10, 10, 1), new Vector(0, 10, 1), new Vector(0, -10, 1), new Vector(10, -10, 1), 200),
-            new BezierRoadSegment(new Vector(10, -10, 1), new Vector(20, -10, 1), new Vector(20, 10, 10), new Vector(10, 10, 10), 200),
-            new BezierRoadSegment(new Vector(10, 10, 10), new Vector(0, 10, 10), new Vector(0, -10, 1), new Vector(-10, -10, 1), 200)});
+            new BezierRoadSegment(new Vector(-9, -9, 3), new Vector(-18, -9, 3), new Vector(-18, 9, 1), new Vector(-9, 9, 1), 76),
+            new BezierRoadSegment(new Vector(-9, 9, 1), new Vector(0, 9, 1), new Vector(0, -9, 1), new Vector(9, -9, 1), 76),
+            new BezierRoadSegment(new Vector(9, -9, 1), new Vector(18, -9, 1), new Vector(18, 9, 10), new Vector(9, 9, 10), 76),
+            new BezierRoadSegment(new Vector(9, 9, 10), new Vector(0, 9, 10), new Vector(0, -9, 3), new Vector(-9, -9, 3), 76)});
 
     RoadSegment[] roadSegments;
 
