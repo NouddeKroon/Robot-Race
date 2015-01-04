@@ -8,6 +8,7 @@ import javax.media.opengl.GL2;
 import java.util.Random;
 
 import static javax.media.opengl.GL.GL_TRIANGLES;
+import static javax.media.opengl.GL2.GL_COMPILE_AND_EXECUTE;
 import static javax.media.opengl.GL2.GL_POLYGON;
 import static javax.media.opengl.GL2GL3.GL_QUADS;
 
@@ -89,6 +90,9 @@ class Robot {
 
     static int lowerArmConeDisplayList = 0;
     static int lowerArmHexPartDisplayList = 0;
+    static int clawDisplayList = 0;
+    static int mouthDisplayList = 0;
+    static int headDisplayList = 0;
 
     enum Side {
         Left,
@@ -205,159 +209,169 @@ class Robot {
                 method makeFaceVertex4 to draw the quads, which automatically does the normal vectors, as long as we
                 make sure to define the vertices in a counterclockwise fashion (otherwise normal is inverted). */
             gl.glColor3f(headColor[0], headColor[1], headColor[2]);         //Set color to color of head.
-            headTex.enable(gl);
-            headTex.bind(gl);
+            if (headDisplayList != 0) {
+                gl.glCallList(headDisplayList);
+            } else {
+                headDisplayList = gl.glGenLists(1);
+                gl.glNewList(headDisplayList, GL_COMPILE_AND_EXECUTE);
+
+                headTex.enable(gl);
+                headTex.bind(gl);
 //            gl.glColor3f(1,1,1);
-            gl.glBegin(GL_QUADS);                                           //Start drawing quads.
+                gl.glBegin(GL_QUADS);                                           //Start drawing quads.
 
-            final int FRONT = 0, BACK = 1, TOP_LEFT = 0, TOP_RIGHT = 1, BOTTOM_LEFT = 2, BOTTOM_RIGHT = 3;
-            double[][][] coords = { /* coords of front face: */ {
-                    {-0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,},   // Top Left
-                    {0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,},    // Top Right
-                    {-0.5 * headWidth, headDepth, 0.5 * neckSize,},                // Bottom left
-                    {0.5 * headWidth, headDepth, 0.5 * neckSize,},                 // Bottom Right
-            }, {
+                final int FRONT = 0, BACK = 1, TOP_LEFT = 0, TOP_RIGHT = 1, BOTTOM_LEFT = 2, BOTTOM_RIGHT = 3;
+                double[][][] coords = { /* coords of front face: */ {
+                        {-0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,},   // Top Left
+                        {0.5 * headWidth, headDepth, 0.5 * neckSize + headHeight,},    // Top Right
+                        {-0.5 * headWidth, headDepth, 0.5 * neckSize,},                // Bottom left
+                        {0.5 * headWidth, headDepth, 0.5 * neckSize,},                 // Bottom Right
+                }, {
                     /* coords of back face: */
-                    {-0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,},  // Top Left
-                    {0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,},   // Top Right
-                    {-0.3 * headWidth, -headDepth, neckSize,},                     // Bottom Left
-                    {0.3 * headWidth, -headDepth, neckSize,},                      // Bottom Right
+                        {-0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,},  // Top Left
+                        {0.3 * headWidth, -headDepth, neckSize + 0.8 * headHeight,},   // Top Right
+                        {-0.3 * headWidth, -headDepth, neckSize,},                     // Bottom Left
+                        {0.3 * headWidth, -headDepth, neckSize,},                      // Bottom Right
+                }
+                };
+
+                //Draw front side of head
+                Util.setNormalVertex3(gl,
+                        coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
+                        coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                        coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+                gl.glTexCoord2d(0, 1.0);
+                gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
+                gl.glTexCoord2d(0.5, 1.0);
+                gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
+                gl.glTexCoord2d(0.5, 0.5);
+                gl.glVertex3d(coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
+                gl.glTexCoord2d(0, 0.5);
+                gl.glVertex3d(coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+
+                //Draw back side of head
+                Util.setNormalVertex3(gl,
+                        coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2],
+                        coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2],
+                        coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+
+                gl.glTexCoord2d(0.5, 1.0);
+                gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+                gl.glTexCoord2d(1, 1.0);
+                gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+                gl.glTexCoord2d(1, 0.5);
+                gl.glVertex3d(coords[BACK][BOTTOM_RIGHT][0], coords[BACK][BOTTOM_RIGHT][1], coords[BACK][BOTTOM_RIGHT][2]);
+                gl.glTexCoord2d(0.5, 0.5);
+                gl.glVertex3d(coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
+
+                //Draw left side of head
+                Util.setNormalVertex3(gl,
+                        coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
+                        coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2],
+                        coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+
+                gl.glTexCoord2d(0, 0.5);
+                gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
+                gl.glTexCoord2d(0.5, 0.5);
+                gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+                gl.glTexCoord2d(0.5, 0.0);
+                gl.glVertex3d(coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
+                gl.glTexCoord2d(0, 0.0);
+                gl.glVertex3d(coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+
+                //Draw right side of head
+                Util.setNormalVertex3(gl,
+                        coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                        coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2],
+                        coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
+
+                gl.glTexCoord2d(0, 0.5);
+                gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
+                gl.glTexCoord2d(0.5, 0.5);
+                gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+                gl.glTexCoord2d(0.5, 0.0);
+                gl.glVertex3d(coords[BACK][BOTTOM_RIGHT][0], coords[BACK][BOTTOM_RIGHT][1], coords[BACK][BOTTOM_RIGHT][2]);
+                gl.glTexCoord2d(0, 0.0);
+                gl.glVertex3d(coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
+
+                //Draw top of head
+                Util.setNormalVertex3(gl,
+                        coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
+                        coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
+                        coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+
+                gl.glTexCoord2d(0.5, 0.5);
+                gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
+                gl.glTexCoord2d(0.5, 0.0);
+                gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
+                gl.glTexCoord2d(1.0, 0.0);
+                gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
+                gl.glTexCoord2d(1.0, 0.5);
+                gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
+
+                //draw bottom of head
+                Util.makeFaceVertex4(gl, 0.5 * headWidth, headDepth, 0.5 * neckSize,
+                        0.3 * headWidth, -headDepth, neckSize,
+                        -0.3 * headWidth, -headDepth, neckSize,
+                        -0.5 * headWidth, headDepth, 0.5 * neckSize);
+
+                gl.glEnd();             //We are done drawing quads.
+                headTex.disable(gl);
+                //Draw antenna.
+                gl.glPushMatrix();                  //Push a new matrix.
+                gl.glTranslated(-0.25 * headWidth, -0.25 * headDepth, neckSize + 0.8 * headHeight); //Translate to location of antenna.
+                glut.glutSolidCone(0.2 * antennaSize, antennaSize, 20, 20);      //Draw a solidcone, using antennasize.
+                gl.glTranslated(0, 0, antennaSize);                           //Translate to top of antenna.
+                glut.glutSolidSphere(0.2 * antennaSize, 20, 20);            //Draw a small sphere, relative to antennasize.
+                gl.glPopMatrix();                                           //Return to original matrix.
+
+                //Draw right eye
+                gl.glPushMatrix();                                              //Push a matrix to store current position.
+                gl.glColor3d(scleraColor[0], scleraColor[1], scleraColor[2]);   //Set color to sclera color.
+                gl.glTranslated(0.2 * headWidth, headDepth, 0.5 * neckSize + 0.6 * headHeight); //Translate to eye position.
+                gl.glRotated(-90, 1, 0, 0);                                     //Rotate around x axis.
+                glut.glutSolidCylinder(eyeRadius, eyeDepth, 100, 5);                //Draw the cylinder forming the sclera.
+                gl.glTranslated(-0.3 * eyeRadius, 0, eyeDepth);                     //Translate to surface of sclera.
+                gl.glColor3d(irisColor[0], irisColor[0], irisColor[0]);             //Set color to iriscolor.
+                glut.glutSolidCylinder(0.7 * eyeRadius, irisDepth, 100, 5);         //Draw the iris.
+                gl.glTranslated(0.3 * eyeRadius, 0, -eyeDepth);                     //Translate back to centre of eye.
+
+                //Draw left eye
+                gl.glColor3d(scleraColor[0], scleraColor[1], scleraColor[2]);   //Set color to sclera color.
+                gl.glTranslated(-0.4 * headWidth, 0, 0);                        //Translate to opposite side of head.
+                glut.glutSolidCylinder(eyeRadius, eyeDepth, 100, 5);            //Draw the cylinder forming the sclera.
+                gl.glColor3d(irisColor[0], irisColor[1], irisColor[2]);         //Set color to iris color.
+                gl.glTranslated(-0.3 * eyeRadius, 0, eyeDepth);                 //Translate to surface of sclera.
+                glut.glutSolidCylinder(0.7 * eyeRadius, irisDepth, 100, 5);     //Draw the iris.
+                gl.glPopMatrix();              //Done drawing eyes, pop the matrix.
+
+
+                gl.glPushMatrix();              //Push a new matrix to store current position.
+                gl.glColor3f(mouthColor[0], mouthColor[1], mouthColor[2]);          //Set color to mouth color.
+                gl.glTranslated(0, headDepth + 0.015, 0.5 * neckSize + 0.3 * headHeight);   //Translate to mouth position.
+
+                //The mouth is a polygon of which the top side is a straight line, and the bottom side are points on a circle.
+                gl.glBegin(GL_POLYGON);             //Begin drawing a polygon.
+                gl.glNormal3d(0, 1, 0);               //Set normal vector
+                //Draw the top side of the mouth.
+                gl.glVertex3d(-0.15 * headWidth, 0, 0);
+                gl.glVertex3d(0.15 * headWidth, 0, 0);
+                //Calculate the centre coordinate and radius of the circle of which the bottom of the mouth is a subsection.
+                double zOffsetCentre = Math.sin(Math.toRadians(15)) * 0.15 * headWidth;
+                double radius = Math.sqrt(Math.pow(zOffsetCentre, 2) + Math.pow(0.15 * headWidth, 2));
+                //In a loop we generate 50 points on the circle, together forming the bottom of the mouth.
+                for (int i = 0; i < 50; i++) {
+                    gl.glVertex3d(
+                            Math.sin(Math.toRadians(75 - 3 * i)) * radius,
+                            0,
+                            zOffsetCentre - Math.cos(Math.toRadians(75 - 3 * i)) * radius);
+                }
+                gl.glEnd();                     //We are finished generating points for the polygon.
+                gl.glPopMatrix();               //Return to original matrix.
+
+
+                gl.glEndList();
             }
-            };
-
-            //Draw front side of head
-            Util.setNormalVertex3(gl,
-                    coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
-                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
-                    coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
-            gl.glTexCoord2d(0, 1.0);
-            gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
-            gl.glTexCoord2d(0.5, 1.0);
-            gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
-            gl.glTexCoord2d(0.5, 0.5);
-            gl.glVertex3d(coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
-            gl.glTexCoord2d(0, 0.5);
-            gl.glVertex3d(coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
-
-            //Draw back side of head
-            Util.setNormalVertex3(gl,
-                    coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2],
-                    coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2],
-                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
-
-            gl.glTexCoord2d(0.5, 1.0);
-            gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
-            gl.glTexCoord2d(1, 1.0);
-            gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
-            gl.glTexCoord2d(1, 0.5);
-            gl.glVertex3d(coords[BACK][BOTTOM_RIGHT][0], coords[BACK][BOTTOM_RIGHT][1], coords[BACK][BOTTOM_RIGHT][2]);
-            gl.glTexCoord2d(0.5, 0.5);
-            gl.glVertex3d(coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
-
-            //Draw left side of head
-            Util.setNormalVertex3(gl,
-                    coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
-                    coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2],
-                    coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
-
-            gl.glTexCoord2d(0, 0.5);
-            gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
-            gl.glTexCoord2d(0.5, 0.5);
-            gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
-            gl.glTexCoord2d(0.5, 0.0);
-            gl.glVertex3d(coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2]);
-            gl.glTexCoord2d(0, 0.0);
-            gl.glVertex3d(coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
-
-            //Draw right side of head
-            Util.setNormalVertex3(gl,
-                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
-                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2],
-                    coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
-
-            gl.glTexCoord2d(0, 0.5);
-            gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
-            gl.glTexCoord2d(0.5, 0.5);
-            gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
-            gl.glTexCoord2d(0.5, 0.0);
-            gl.glVertex3d(coords[BACK][BOTTOM_RIGHT][0], coords[BACK][BOTTOM_RIGHT][1], coords[BACK][BOTTOM_RIGHT][2]);
-            gl.glTexCoord2d(0, 0.0);
-            gl.glVertex3d(coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
-
-            //Draw top of head
-            Util.setNormalVertex3(gl,
-                    coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
-                    coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
-                    coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
-
-            gl.glTexCoord2d(0.5, 0.5);
-            gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
-            gl.glTexCoord2d(0.5, 0.0);
-            gl.glVertex3d(coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
-            gl.glTexCoord2d(1.0, 0.0);
-            gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
-            gl.glTexCoord2d(1.0, 0.5);
-            gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
-
-            //draw bottom of head
-            Util.makeFaceVertex4(gl, 0.5 * headWidth, headDepth, 0.5 * neckSize,
-                    0.3 * headWidth, -headDepth, neckSize,
-                    -0.3 * headWidth, -headDepth, neckSize,
-                    -0.5 * headWidth, headDepth, 0.5 * neckSize);
-
-            gl.glEnd();             //We are done drawing quads.
-            headTex.disable(gl);
-            //Draw antenna.
-            gl.glPushMatrix();                  //Push a new matrix.
-            gl.glTranslated(-0.25 * headWidth, -0.25 * headDepth, neckSize + 0.8 * headHeight); //Translate to location of antenna.
-            glut.glutSolidCone(0.2 * antennaSize, antennaSize, 20, 20);      //Draw a solidcone, using antennasize.
-            gl.glTranslated(0, 0, antennaSize);                           //Translate to top of antenna.
-            glut.glutSolidSphere(0.2 * antennaSize, 20, 20);            //Draw a small sphere, relative to antennasize.
-            gl.glPopMatrix();                                           //Return to original matrix.
-
-            //Draw right eye
-            gl.glPushMatrix();                                              //Push a matrix to store current position.
-            gl.glColor3d(scleraColor[0], scleraColor[1], scleraColor[2]);   //Set color to sclera color.
-            gl.glTranslated(0.2 * headWidth, headDepth, 0.5 * neckSize + 0.6 * headHeight); //Translate to eye position.
-            gl.glRotated(-90, 1, 0, 0);                                     //Rotate around x axis.
-            glut.glutSolidCylinder(eyeRadius, eyeDepth, 100, 5);                //Draw the cylinder forming the sclera.
-            gl.glTranslated(-0.3 * eyeRadius, 0, eyeDepth);                     //Translate to surface of sclera.
-            gl.glColor3d(irisColor[0], irisColor[0], irisColor[0]);             //Set color to iriscolor.
-            glut.glutSolidCylinder(0.7 * eyeRadius, irisDepth, 100, 5);         //Draw the iris.
-            gl.glTranslated(0.3 * eyeRadius, 0, -eyeDepth);                     //Translate back to centre of eye.
-
-            //Draw left eye
-            gl.glColor3d(scleraColor[0], scleraColor[1], scleraColor[2]);   //Set color to sclera color.
-            gl.glTranslated(-0.4 * headWidth, 0, 0);                        //Translate to opposite side of head.
-            glut.glutSolidCylinder(eyeRadius, eyeDepth, 100, 5);            //Draw the cylinder forming the sclera.
-            gl.glColor3d(irisColor[0], irisColor[1], irisColor[2]);         //Set color to iris color.
-            gl.glTranslated(-0.3 * eyeRadius, 0, eyeDepth);                 //Translate to surface of sclera.
-            glut.glutSolidCylinder(0.7 * eyeRadius, irisDepth, 100, 5);     //Draw the iris.
-            gl.glPopMatrix();              //Done drawing eyes, pop the matrix.
-
-            //Draw mouth
-            gl.glPushMatrix();              //Push a new matrix to store current position.
-            gl.glColor3f(mouthColor[0], mouthColor[1], mouthColor[2]);          //Set color to mouth color.
-            gl.glTranslated(0, headDepth + 0.015, 0.5 * neckSize + 0.3 * headHeight);   //Translate to mouth position.
-
-            //The mouth is a polygon of which the top side is a straight line, and the bottom side are points on a circle.
-            gl.glBegin(GL_POLYGON);             //Begin drawing a polygon.
-            gl.glNormal3d(0, 1, 0);               //Set normal vector
-            //Draw the top side of the mouth.
-            gl.glVertex3d(-0.15 * headWidth, 0, 0);
-            gl.glVertex3d(0.15 * headWidth, 0, 0);
-            //Calculate the centre coordinate and radius of the circle of which the bottom of the mouth is a subsection.
-            double zOffsetCentre = Math.sin(Math.toRadians(15)) * 0.15 * headWidth;
-            double radius = Math.sqrt(Math.pow(zOffsetCentre, 2) + Math.pow(0.15 * headWidth, 2));
-            //In a loop we generate 50 points on the circle, together forming the bottom of the mouth.
-            for (int i = 0; i < 50; i++) {
-                gl.glVertex3d(
-                        Math.sin(Math.toRadians(75 - 3 * i)) * radius,
-                        0,
-                        zOffsetCentre - Math.cos(Math.toRadians(75 - 3 * i)) * radius);
-            }
-            gl.glEnd();                     //We are finished generating points for the polygon.
-            gl.glPopMatrix();               //Return to original matrix.
         }
     }
 
@@ -437,8 +451,8 @@ class Robot {
                 // Initial vertex is the center of the circle
                 gl.glVertex3d(topCirclePos.x(), topCirclePos.y(), topCirclePos.z());
 
-                // for every degree draw a triangle from the center to the edge of the circle
-                for (int i = 0; i <= 360; i++) {
+                // for every 5 degrees draw a triangle from the center to the edge of the circle
+                for (int i = 0; i <= 360; i+=5) {
                     // calculate the rad angle only once
                     double angle = Math.toRadians(i);
 
@@ -456,7 +470,7 @@ class Robot {
 
                 gl.glVertex3d(bottomCirclePos.x(), bottomCirclePos.y(), bottomCirclePos.z());
 
-                for (int i = 0; i <= 360; i++) {
+                for (int i = 0; i <= 360; i+=5) {
                     double angle = Math.toRadians(i);
                     gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
                             bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
@@ -510,7 +524,8 @@ class Robot {
                 the vector going from top to bottom. In the calculation of the normals we have to keep the right-hand
                 rule for cross product in mind.
                 */
-                double angle = Math.toRadians(-1);
+                double stepSize = 5;
+                double angle = Math.toRadians(-stepSize);
                 double angleNext = Math.toRadians(0);
                 Vector vectorTopCurToBotCur = new Vector(
                         bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x() - topCircleRadius * Math.cos(angle) - topCirclePos.x(),
@@ -530,10 +545,10 @@ class Robot {
                 Vector n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
                 Vector n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
 
-                for (int i = 0; i <= 360; i++) {
+                for (int i = 0; i <= 360; i+=stepSize) {
                     // calculate the angle only once for every degree:
                     angle = angleNext;
-                    angleNext = Math.toRadians(i + 1);
+                    angleNext = Math.toRadians(i + stepSize);
 
                     //What was in the previous loop the vector from TopNext to BotNext, is in iteration of the loop the
                     //vector between TopCur and BotCur, so we can pass it on. Also calculate the other 2 necessary vectors:
@@ -685,21 +700,29 @@ class Robot {
 
             // position the claw such that it clips the the cylinder
             gl.glPushMatrix();
+            gl.glColor3f(clawColor[0], clawColor[1], clawColor[2]);
             gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
-            drawClaw(gl);
+            if (clawDisplayList != 0){
+                gl.glCallList(clawDisplayList);
+            } else {
+                clawDisplayList = gl.glGenLists(1);
+                gl.glNewList(clawDisplayList,GL_COMPILE_AND_EXECUTE);
+                drawClaw(gl);
+                gl.glEndList();
+            }
             gl.glPopMatrix();
 
             // Draw another two claws each angled 120 degrees from one another
             gl.glPushMatrix();
             gl.glRotated(120, 0, 0, 1);
             gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
-            drawClaw(gl);
+            gl.glCallList(clawDisplayList);
             gl.glPopMatrix();
 
             gl.glPushMatrix();
             gl.glRotated(240, 0, 0, 1);
             gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
-            drawClaw(gl);
+            gl.glCallList(clawDisplayList);
             gl.glPopMatrix();
 
             gl.glPopMatrix();
@@ -718,7 +741,7 @@ class Robot {
         double[][] vertices = new double[4][2];
 
         gl.glPushMatrix();
-        gl.glColor3f(clawColor[0], clawColor[1], clawColor[2]);
+
 
         // The below draw calls position the claw lying on the x-y plane. now rotate to "hang off" of the y-z plane
         gl.glRotated(-90, 0, 1, 0);
@@ -735,7 +758,6 @@ class Robot {
                 gl.glRotated(-angles[angle_idx - 1], 0, 1, 0);
                 gl.glTranslated(radii[angle_idx - 1] - radii[angle_idx], 0, 0);
             }
-
             gl.glBegin(GL_QUADS);
 
             // Split up the angle into 2 degree pieces and draw quads to realize the curvature

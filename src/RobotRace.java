@@ -81,6 +81,8 @@ public class RobotRace extends Base {
      */
     private final Camera camera;
 
+    int displayList;
+    boolean robotsInitialized;
 
     /**
      * Instance of the race track.
@@ -196,6 +198,8 @@ public class RobotRace extends Base {
         //Try to load the terrain colour texture, give it to the terrain object.
         landscape = loadTexture("terrainTexture.jpg");
         terrain.setTexture(landscape);
+
+        displayList = gl.glGenLists(1);
     }
 
     /**
@@ -293,8 +297,17 @@ public class RobotRace extends Base {
         raceTrack.draw(gl);
 
         // Draw the 4 robots.
-        for (int i = 0; i < 4; i++) {
-            robots[i].drawAtPos(gl, glut);
+        if (!robotsInitialized) {
+            for (int i = 0; i < 4; i++) {
+                robots[i].drawAtPos(gl, glut);
+            }
+            robotsInitialized = true;
+        } else {
+            gl.glNewList(displayList, GL_COMPILE_AND_EXECUTE);
+            for (int i = 0; i < 4; i++) {
+                robots[i].drawAtPos(gl, glut);
+            }
+            gl.glEndList();
         }
 
         // Draw terrain
@@ -341,10 +354,11 @@ public class RobotRace extends Base {
 
         // Draw race track
         raceTrack.draw(gl);
-
-        for (int i = 0; i < 4; i++) {
-            robots[i].drawAtPos(gl, glut);
-        }
+//
+//        for (int i = 0; i < 4; i++) {
+//            robots[i].drawAtPos(gl, glut);
+//        }
+        gl.glCallList(displayList);
 
         // Draw terrain
         terrain.draw(gl);
