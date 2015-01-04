@@ -92,6 +92,9 @@ class Robot {
         Right
     }
 
+    static int lowerArmConeDisplayList = 0;
+    static int lowerArmHexPartDisplayList = 0;
+
     /**
      * The material from which this robot is built.
      */
@@ -405,6 +408,9 @@ class Robot {
         Vector hexPartPos = new Vector(0, 0, lowerArmToHand.length());
         double hexPartRadius = 0.05;
 
+        Vector n1, n2, n3, n4;
+        double angle, angleNext;
+
         if (gs.showStick) {
             // the lower arm stick figure is a black line connected to a black sphere
             gl.glColor3f(0, 0, 0);
@@ -416,41 +422,47 @@ class Robot {
 
             gl.glColor3f(lowerArmColor[0], lowerArmColor[1], lowerArmColor[2]);
 
-            // draw the circle which closes of the top of the "cut-off" cone
-            gl.glBegin(gl.GL_TRIANGLE_FAN);
+            if (lowerArmConeDisplayList != 0) {
+                gl.glCallList(lowerArmConeDisplayList);
+            } else {
+                lowerArmConeDisplayList = gl.glGenLists(1);
+                gl.glNewList(lowerArmConeDisplayList, GL2.GL_COMPILE_AND_EXECUTE);
 
-            // the normal for the top face is directed along z-axis
-            gl.glNormal3d(0, 0, 1);
+                // draw the circle which closes of the top of the "cut-off" cone
+                gl.glBegin(gl.GL_TRIANGLE_FAN);
 
-            // Initial vertex is the center of the circle
-            gl.glVertex3d(topCirclePos.x(), topCirclePos.y(), topCirclePos.z());
+                // the normal for the top face is directed along z-axis
+                gl.glNormal3d(0, 0, 1);
 
-            // for every degree draw a triangle from the center to the edge of the circle
-            for (int i = 0; i <= 360; i++) {
-                // calculate the rad angle only once
-                double angle = Math.toRadians(i);
+                // Initial vertex is the center of the circle
+                gl.glVertex3d(topCirclePos.x(), topCirclePos.y(), topCirclePos.z());
 
-                gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
-                        topCircleRadius * Math.sin(angle) + topCirclePos.y(),
-                        topCirclePos.z());
-            }
-            gl.glEnd();
+                // for every degree draw a triangle from the center to the edge of the circle
+                for (int i = 0; i <= 360; i++) {
+                    // calculate the rad angle only once
+                    angle = Math.toRadians(i);
 
-            // draw the circle which closes of the bottom of the "cut-off" cone
-            gl.glBegin(gl.GL_TRIANGLE_FAN);
+                    gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
+                            topCircleRadius * Math.sin(angle) + topCirclePos.y(),
+                            topCirclePos.z());
+                }
+                gl.glEnd();
 
-            // the normal for the bottom face is directed along negative z-axis
-            gl.glNormal3d(0, 0, -1);
+                // draw the circle which closes of the bottom of the "cut-off" cone
+                gl.glBegin(gl.GL_TRIANGLE_FAN);
 
-            gl.glVertex3d(bottomCirclePos.x(), bottomCirclePos.y(), bottomCirclePos.z());
+                // the normal for the bottom face is directed along negative z-axis
+                gl.glNormal3d(0, 0, -1);
 
-            for (int i = 0; i <= 360; i++) {
-                double angle = Math.toRadians(i);
-                gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
-                        bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
-                        bottomCirclePos.z());
-            }
-            gl.glEnd();
+                gl.glVertex3d(bottomCirclePos.x(), bottomCirclePos.y(), bottomCirclePos.z());
+
+                for (int i = 0; i <= 360; i++) {
+                    angle = Math.toRadians(i);
+                    gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
+                            bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
+                            bottomCirclePos.z());
+                }
+                gl.glEnd();
 
                 /*
                 Draw "cut-off"-cone formed by the two circles. To draw this cone we use a triangle strip,
@@ -490,7 +502,7 @@ class Robot {
                  TopCur and BotCur, TopCur and BotNext and between TopNext and BotNext can be reused as well.
                  We calculate these parameters for the iteration i=-1 before the loop starts.
                 */
-            gl.glBegin(gl.GL_TRIANGLE_STRIP);
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
 
 
                 /*
@@ -498,42 +510,40 @@ class Robot {
                 the vector going from top to bottom. In the calculation of the normals we have to keep the right-hand
                 rule for cross product in mind.
                 */
-            double angle = Math.toRadians(-1);
-            double angleNext = Math.toRadians(0);
-            Vector vectorTopCurToBotCur = new Vector(
-                    bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x() - topCircleRadius * Math.cos(angle) - topCirclePos.x(),
-                    bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y() - topCircleRadius * Math.sin(angle) - topCirclePos.y()
-                    , bottomCirclePos.z() - topCirclePos.z());
-            Vector vectorTopCurToBotNext = new Vector(
-                    bottomCircleRadius * Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius * Math.cos(angle) - topCirclePos.x(),
-                    bottomCircleRadius * Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius * Math.sin(angle) - topCirclePos.y()
-                    , bottomCirclePos.z() - topCirclePos.z());
-            Vector vectorTopNextToBotNext = new Vector(
-                    bottomCircleRadius * Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius * Math.cos(angleNext) - topCirclePos.x(),
-                    bottomCircleRadius * Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius * Math.sin(angleNext) - topCirclePos.y()
-                    , bottomCirclePos.z() - topCirclePos.z());
-
-            Vector n1;
-            Vector n2;
-            Vector n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
-            Vector n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
-
-            for (int i = 0; i <= 360; i++) {
-                // calculate the angle only once for every degree:
-                angle = angleNext;
-                angleNext = Math.toRadians(i + 1);
-
-                //What was in the previous loop the vector from TopNext to BotNext, is in iteration of the loop the
-                //vector between TopCur and BotCur, so we can pass it on. Also calculate the other 2 necessary vectors:
-                vectorTopCurToBotCur = vectorTopNextToBotNext;
-                vectorTopCurToBotNext = new Vector(
+                angle = Math.toRadians(-1);
+                angleNext = Math.toRadians(0);
+                Vector vectorTopCurToBotCur = new Vector(
+                        bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x() - topCircleRadius * Math.cos(angle) - topCirclePos.x(),
+                        bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y() - topCircleRadius * Math.sin(angle) - topCirclePos.y()
+                        , bottomCirclePos.z() - topCirclePos.z());
+                Vector vectorTopCurToBotNext = new Vector(
                         bottomCircleRadius * Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius * Math.cos(angle) - topCirclePos.x(),
                         bottomCircleRadius * Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius * Math.sin(angle) - topCirclePos.y()
                         , bottomCirclePos.z() - topCirclePos.z());
-                vectorTopNextToBotNext = new Vector(
+                Vector vectorTopNextToBotNext = new Vector(
                         bottomCircleRadius * Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius * Math.cos(angleNext) - topCirclePos.x(),
                         bottomCircleRadius * Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius * Math.sin(angleNext) - topCirclePos.y()
                         , bottomCirclePos.z() - topCirclePos.z());
+
+                n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
+                n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+
+                for (int i = 0; i <= 360; i++) {
+                    // calculate the angle only once for every degree:
+                    angle = angleNext;
+                    angleNext = Math.toRadians(i + 1);
+
+                    //What was in the previous loop the vector from TopNext to BotNext, is in iteration of the loop the
+                    //vector between TopCur and BotCur, so we can pass it on. Also calculate the other 2 necessary vectors:
+                    vectorTopCurToBotCur = vectorTopNextToBotNext;
+                    vectorTopCurToBotNext = new Vector(
+                            bottomCircleRadius * Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius * Math.cos(angle) - topCirclePos.x(),
+                            bottomCircleRadius * Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius * Math.sin(angle) - topCirclePos.y()
+                            , bottomCirclePos.z() - topCirclePos.z());
+                    vectorTopNextToBotNext = new Vector(
+                            bottomCircleRadius * Math.cos(angleNext) + bottomCirclePos.x() - topCircleRadius * Math.cos(angleNext) - topCirclePos.x(),
+                            bottomCircleRadius * Math.sin(angleNext) + bottomCirclePos.y() - topCircleRadius * Math.sin(angleNext) - topCirclePos.y()
+                            , bottomCirclePos.z() - topCirclePos.z());
 
 
                     /*
@@ -541,30 +551,33 @@ class Robot {
                     on these values. Also calculate the new normals n3 and n4 using cross product, taking the right
                     hand rule in mind. Normalize these vectors.
                     */
-                n1 = n3;
-                n2 = n4;
-                n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
-                n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+                    n1 = n3;
+                    n2 = n4;
+                    n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
+                    n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
 
 
-                //Now we just add the relevant vectors up for the bottom normal and top normal.
-                Vector normalVectorBottom = n1.add(n2.add(n3));
-                Vector normalVectorTop = n2.add(n3.add(n4));
+                    //Now we just add the relevant vectors up for the bottom normal and top normal.
+                    Vector normalVectorBottom = n1.add(n2.add(n3));
+                    Vector normalVectorTop = n2.add(n3.add(n4));
 
 
-                // Draw the bottom vertex using the calculated normal.
-                gl.glNormal3d(normalVectorBottom.x(), normalVectorBottom.y(), normalVectorBottom.z());
-                gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
-                        bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
-                        bottomCirclePos.z());
-                // Draw the top vertex using the calculated normal.
-                gl.glNormal3d(normalVectorTop.x(), normalVectorTop.y(), normalVectorTop.z());
-                gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
-                        topCircleRadius * Math.sin(angle) + topCirclePos.y(),
-                        topCirclePos.z());
+                    // Draw the bottom vertex using the calculated normal.
+                    gl.glNormal3d(normalVectorBottom.x(), normalVectorBottom.y(), normalVectorBottom.z());
+                    gl.glVertex3d(bottomCircleRadius * Math.cos(angle) + bottomCirclePos.x(),
+                            bottomCircleRadius * Math.sin(angle) + bottomCirclePos.y(),
+                            bottomCirclePos.z());
+                    // Draw the top vertex using the calculated normal.
+                    gl.glNormal3d(normalVectorTop.x(), normalVectorTop.y(), normalVectorTop.z());
+                    gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
+                            topCircleRadius * Math.sin(angle) + topCirclePos.y(),
+                            topCirclePos.z());
+                }
+
+                gl.glEnd();                 //Finished drawing lower arm.
+
+                gl.glEndList();
             }
-
-            gl.glEnd();                 //Finished drawing lower arm.
 
                 /* Now we draw the "hex part", connecting the lower arm to the elbow joint. The technique we use for
                 * this is exactly the same as for the lower arm cone, so we refer to that for clarification. Now, the
@@ -573,69 +586,79 @@ class Robot {
                 * triangles total.
                 */
             gl.glColor3f(hexPartColor[0], hexPartColor[1], hexPartColor[2]);        //Set color
-            gl.glBegin(gl.GL_TRIANGLE_STRIP);
 
-            //Again we calculate the vectors and normals that the loop reuses from the previous iteration i=-60:
-            angle = Math.toRadians(-60);
-            angleNext = Math.toRadians(0);
+            if (lowerArmHexPartDisplayList != 0) {
+                gl.glCallList(lowerArmHexPartDisplayList);
+            } else {
+                lowerArmHexPartDisplayList = gl.glGenLists(1);
+                gl.glNewList(lowerArmHexPartDisplayList, GL2.GL_COMPILE_AND_EXECUTE);
 
-            vectorTopCurToBotCur = new Vector(
-                    topCircleRadius * Math.cos(angle) + topCirclePos.x() - hexPartRadius * Math.cos(angle) - hexPartPos.x(),
-                    topCircleRadius * Math.sin(angle) + topCirclePos.y() - hexPartRadius * Math.sin(angle) - hexPartPos.y()
-                    , topCirclePos.z() - hexPartPos.z());
-            vectorTopCurToBotNext = new Vector(
-                    topCircleRadius * Math.cos(angleNext) + topCirclePos.x() - hexPartRadius * Math.cos(angle) - hexPartPos.x(),
-                    topCircleRadius * Math.sin(angleNext) + topCirclePos.y() - hexPartRadius * Math.sin(angle) - hexPartPos.y()
-                    , topCirclePos.z() - hexPartPos.z());
-            vectorTopNextToBotNext = new Vector(
-                    topCircleRadius * Math.cos(angleNext) + topCirclePos.x() - hexPartRadius * Math.cos(angleNext) - hexPartPos.x(),
-                    topCircleRadius * Math.sin(angleNext) + topCirclePos.y() - hexPartRadius * Math.sin(angleNext) - hexPartPos.y()
-                    , topCirclePos.z() - hexPartPos.z());
+                gl.glBegin(gl.GL_TRIANGLE_STRIP);
 
-            n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
-            n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+                //Again we calculate the vectors and normals that the loop reuses from the previous iteration i=-60:
+                angle = Math.toRadians(-60);
+                angleNext = Math.toRadians(0);
 
-            for (int i = 0; i <= 360; i += 60) {
-                //Reuse angle from previous loop iteration.
-                angle = angleNext;
-                angleNext = Math.toRadians(i + 60);
-
-                //Reuse TopNext to BotNext vector from previous iteration as TopCur to BotCur vector. Also calculate
-                //calculate other 2 necessary vectors for normal calculation:
-                vectorTopCurToBotCur = vectorTopNextToBotNext;
-                vectorTopCurToBotNext = new Vector(
+                Vector vectorTopCurToBotCur = new Vector(
+                        topCircleRadius * Math.cos(angle) + topCirclePos.x() - hexPartRadius * Math.cos(angle) - hexPartPos.x(),
+                        topCircleRadius * Math.sin(angle) + topCirclePos.y() - hexPartRadius * Math.sin(angle) - hexPartPos.y()
+                        , topCirclePos.z() - hexPartPos.z());
+                Vector vectorTopCurToBotNext = new Vector(
                         topCircleRadius * Math.cos(angleNext) + topCirclePos.x() - hexPartRadius * Math.cos(angle) - hexPartPos.x(),
                         topCircleRadius * Math.sin(angleNext) + topCirclePos.y() - hexPartRadius * Math.sin(angle) - hexPartPos.y()
                         , topCirclePos.z() - hexPartPos.z());
-                vectorTopNextToBotNext = new Vector(
+                Vector vectorTopNextToBotNext = new Vector(
                         topCircleRadius * Math.cos(angleNext) + topCirclePos.x() - hexPartRadius * Math.cos(angleNext) - hexPartPos.x(),
                         topCircleRadius * Math.sin(angleNext) + topCirclePos.y() - hexPartRadius * Math.sin(angleNext) - hexPartPos.y()
                         , topCirclePos.z() - hexPartPos.z());
 
-                //Just like before we can reuse n3 and n4 as n1 and n2 respectively. Calculate new normals using
-                //cross product keeping right hand rule in mind. Normalize.
-                n1 = n3;
-                n2 = n4;
                 n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
                 n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
 
-                //Add the vector n1, n2 and n3 together for the bottom normal vector, and n2, n3, n4 for the top one.
-                Vector normalVectorTopCircle = n1.add(n2.add(n3));
-                Vector normalVectorHexPart = n2.add(n3.add(n4));
+                for (int i = 0; i <= 360; i += 60) {
+                    //Reuse angle from previous loop iteration.
+                    angle = angleNext;
+                    angleNext = Math.toRadians(i + 60);
 
-                //Use the calculated normals and draw the bottom coordinate.
-                gl.glNormal3d(normalVectorTopCircle.x(), normalVectorTopCircle.y(), normalVectorTopCircle.z());
-                gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
-                        topCircleRadius * Math.sin(angle) + topCirclePos.y(),
-                        topCirclePos.z());
-                //Use the calculated normal and draw the top coordinate.
-                gl.glNormal3d(normalVectorHexPart.x(), normalVectorHexPart.y(), normalVectorHexPart.z());
-                gl.glVertex3d(hexPartRadius * Math.cos(angle) + hexPartPos.x(),
-                        hexPartRadius * Math.sin(angle) + hexPartPos.y(),
-                        hexPartPos.z());
+                    //Reuse TopNext to BotNext vector from previous iteration as TopCur to BotCur vector. Also calculate
+                    //calculate other 2 necessary vectors for normal calculation:
+                    vectorTopCurToBotCur = vectorTopNextToBotNext;
+                    vectorTopCurToBotNext = new Vector(
+                            topCircleRadius * Math.cos(angleNext) + topCirclePos.x() - hexPartRadius * Math.cos(angle) - hexPartPos.x(),
+                            topCircleRadius * Math.sin(angleNext) + topCirclePos.y() - hexPartRadius * Math.sin(angle) - hexPartPos.y()
+                            , topCirclePos.z() - hexPartPos.z());
+                    vectorTopNextToBotNext = new Vector(
+                            topCircleRadius * Math.cos(angleNext) + topCirclePos.x() - hexPartRadius * Math.cos(angleNext) - hexPartPos.x(),
+                            topCircleRadius * Math.sin(angleNext) + topCirclePos.y() - hexPartRadius * Math.sin(angleNext) - hexPartPos.y()
+                            , topCirclePos.z() - hexPartPos.z());
+
+                    //Just like before we can reuse n3 and n4 as n1 and n2 respectively. Calculate new normals using
+                    //cross product keeping right hand rule in mind. Normalize.
+                    n1 = n3;
+                    n2 = n4;
+                    n3 = vectorTopCurToBotCur.cross(vectorTopCurToBotNext).normalized();
+                    n4 = vectorTopNextToBotNext.cross(vectorTopCurToBotNext).normalized();
+
+                    //Add the vector n1, n2 and n3 together for the bottom normal vector, and n2, n3, n4 for the top one.
+                    Vector normalVectorTopCircle = n1.add(n2.add(n3));
+                    Vector normalVectorHexPart = n2.add(n3.add(n4));
+
+                    //Use the calculated normals and draw the bottom coordinate.
+                    gl.glNormal3d(normalVectorTopCircle.x(), normalVectorTopCircle.y(), normalVectorTopCircle.z());
+                    gl.glVertex3d(topCircleRadius * Math.cos(angle) + topCirclePos.x(),
+                            topCircleRadius * Math.sin(angle) + topCirclePos.y(),
+                            topCirclePos.z());
+                    //Use the calculated normal and draw the top coordinate.
+                    gl.glNormal3d(normalVectorHexPart.x(), normalVectorHexPart.y(), normalVectorHexPart.z());
+                    gl.glVertex3d(hexPartRadius * Math.cos(angle) + hexPartPos.x(),
+                            hexPartRadius * Math.sin(angle) + hexPartPos.y(),
+                            hexPartPos.z());
+                }
+
+                gl.glEnd();                 //Finish drawing *phew*.
+
+                gl.glEndList();
             }
-
-            gl.glEnd();                 //Finish drawing *phew*.
         }
 
         // draw the hand at the wrist joint
