@@ -103,13 +103,8 @@ public class RobotRace extends Base {
      * At the very start of setView the difference is calculated and is use by the camera and by the animation of
      * the robots.
      */
-    private long diffTimeFrames = 0;
 
     private Texture landscape;
-
-    private int displayList;
-
-//    private long startTimeDrawing = 0;
 
     /**
      * Constructs this robot race by initializing robots,
@@ -201,8 +196,6 @@ public class RobotRace extends Base {
         //Try to load the terrain colour texture, give it to the terrain object.
         landscape = loadTexture("terrainTexture.jpg");
         terrain.setTexture(landscape);
-
-        displayList = gl.glGenLists(1);
     }
 
     /**
@@ -212,8 +205,12 @@ public class RobotRace extends Base {
     public void setView() {
         // Calculate the difference in time since the previous moment we were here.
         long currentTime = System.nanoTime();
-        diffTimeFrames = currentTime - lastTimeSceneDrawn;
+        long diffTimeFrames = currentTime - lastTimeSceneDrawn;
         lastTimeSceneDrawn = currentTime;
+
+        for (int i = 0; i < 4; i++) {
+            robots[i].updatePos(diffTimeFrames);
+        }
 
         // Select part of window.
         gl.glViewport(0, 0, gs.w, gs.h);
@@ -280,14 +277,10 @@ public class RobotRace extends Base {
         // Clear depth buffer.
         gl.glClear(GL_DEPTH_BUFFER_BIT);
 
-
-
-
         // Set color to black.
         gl.glColor3f(0f, 0f, 0f);
 
         gl.glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 
         // Draw the axis frame
         if (gs.showAxes) {
@@ -299,19 +292,15 @@ public class RobotRace extends Base {
         // Draw race track
         raceTrack.draw(gl);
 
-        gl.glNewList(displayList,GL_COMPILE_AND_EXECUTE);
         // Draw the 4 robots.
         for (int i = 0; i < 4; i++) {
-            robots[i].drawAtPos(gl, glut, diffTimeFrames);
+            robots[i].drawAtPos(gl, glut);
         }
-        gl.glEndList();
 
         // Draw terrain
         terrain.draw(gl);
 
-
         drawPictureInPicture();
-
     }
 
     /**
@@ -353,8 +342,9 @@ public class RobotRace extends Base {
         // Draw race track
         raceTrack.draw(gl);
 
-        // Draw the 4 robots by calling the previously generated display list.
-        gl.glCallList(displayList);
+        for (int i = 0; i < 4; i++) {
+            robots[i].drawAtPos(gl, glut);
+        }
 
         // Draw terrain
         terrain.draw(gl);
