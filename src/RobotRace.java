@@ -9,6 +9,7 @@
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.TextureIO;
 import robotrace.Base;
+import robotrace.Vector;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +81,7 @@ public class RobotRace extends Base {
      */
     private final Camera camera;
 
+
     /**
      * Instance of the race track.
      */
@@ -104,6 +106,8 @@ public class RobotRace extends Base {
     private long diffTimeFrames = 0;
 
     private Texture landscape;
+
+    private int displayList;
 
 //    private long startTimeDrawing = 0;
 
@@ -197,6 +201,8 @@ public class RobotRace extends Base {
         //Try to load the terrain colour texture, give it to the terrain object.
         landscape = loadTexture("terrainTexture.jpg");
         terrain.setTexture(landscape);
+
+        displayList = gl.glGenLists(1);
     }
 
     /**
@@ -274,10 +280,14 @@ public class RobotRace extends Base {
         // Clear depth buffer.
         gl.glClear(GL_DEPTH_BUFFER_BIT);
 
+
+
+
         // Set color to black.
         gl.glColor3f(0f, 0f, 0f);
 
         gl.glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 
         // Draw the axis frame
         if (gs.showAxes) {
@@ -289,13 +299,19 @@ public class RobotRace extends Base {
         // Draw race track
         raceTrack.draw(gl);
 
+        gl.glNewList(displayList,GL_COMPILE_AND_EXECUTE);
         // Draw the 4 robots.
         for (int i = 0; i < 4; i++) {
             robots[i].drawAtPos(gl, glut, diffTimeFrames);
         }
+        gl.glEndList();
 
         // Draw terrain
         terrain.draw(gl);
+
+
+        drawPictureInPicture();
+
     }
 
     /**
@@ -305,6 +321,43 @@ public class RobotRace extends Base {
     public void drawAxisFrame() {
         // Draw the 3 orthonormal axes, each the length of 1 unit (meter) and with their respective colors and a yellow origin.
         new AxisSystem().draw(gl, glut);
+    }
+
+
+    //Method drawing picture-in-picture, which is a static camera floating above the map.
+    private void drawPictureInPicture(){
+        //Define a new, square viewport, in the top-right corner, with a width that is 1/3th of the smallest of the length
+        //and height of the window.
+        int width = Math.min(gs.w,gs.h) / 3;
+        gl.glViewport(gs.w-width, gs.h-width, width, width);
+
+        // Set projection matrix. Since it's a static camera we can hardcode the fovangle.
+        gl.glMatrixMode(GL_PROJECTION);
+        gl.glClear(GL_DEPTH_BUFFER_BIT);
+        gl.glLoadIdentity();
+        glu.gluPerspective(60, 1, 1.0, 100.0);
+
+        gl.glMatrixMode(GL_MODELVIEW);
+        gl.glLoadIdentity();
+
+        //Set the static position of the camera.
+        Vector lookAt = new Vector(0,0,0);
+        Vector cameraPos =new Vector(0,0,35);
+        Vector up = new Vector(0,1,0);
+
+        // Update the view according to the camera mode
+        glu.gluLookAt(cameraPos.x(), cameraPos.y(), cameraPos.z(),
+                lookAt.x(), lookAt.y(), lookAt.z(),
+                up.x(), up.y(), up.z());
+
+        // Draw race track
+        raceTrack.draw(gl);
+
+        // Draw the 4 robots by calling the previously generated display list.
+        gl.glCallList(displayList);
+
+        // Draw terrain
+        terrain.draw(gl);
     }
 
 

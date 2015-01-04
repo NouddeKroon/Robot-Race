@@ -8,7 +8,6 @@ import static javax.media.opengl.GL2GL3.*;
  * Implementation of the terrain.
  */
 class Terrain {
-    boolean displaylistIsSet;
     Texture landscape;
     int displayList;                    //Variable pointing to the display list.
 
@@ -28,17 +27,15 @@ class Terrain {
      * calls drawTerrain and stores it all in the displaylist.
      */
     public void draw(GL2 gl) {
-        if (displaylistIsSet) {
-            gl.glColor3d(1,1,1);
-            gl.glCallList(displayList);
-        } else {
+        if (displayList == 0) {
             displayList = gl.glGenLists(1);
-            gl.glNewList(displayList, GL2.GL_COMPILE);
+            gl.glNewList(displayList, GL2.GL_COMPILE_AND_EXECUTE);
 
             drawTerrain(gl);
 
             gl.glEndList();
-            displaylistIsSet = true;
+        } else {
+            gl.glCallList(displayList);
         }
     }
 
@@ -57,8 +54,6 @@ class Terrain {
         for (float x = -20; x<20; x+=stepSize) {
             gl.glBegin(gl.GL_TRIANGLE_STRIP);
             for (float y = -20; y<=20; y+=stepSize) {
-
-
                 normal = getNormal(x,y);
                 gl.glNormal3f((float)normal.x(),(float)normal.y(),(float)normal.z());
                 gl.glTexCoord1f((heightAt(x, y) + 1f) / 2f);

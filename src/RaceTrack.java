@@ -40,7 +40,7 @@ class RaceTrack {
         }
         updateTrackList(gl);
         if (!displayListDrawn) {
-            gl.glNewList(displayList, GL2.GL_COMPILE);
+            gl.glNewList(displayList, GL2.GL_COMPILE_AND_EXECUTE);
             trackList[trackNr].draw(gl);
             gl.glEndList();
             displayListDrawn = true;
