@@ -28,7 +28,7 @@ class Robot {
     static Texture headTex;
     static Texture torsoTex;
 
-    double baseSpeed = 20 + 4 * (new Random().nextDouble() - 0.5); // m/s
+    double baseSpeed = 15 + 4 * (new Random().nextDouble() - 0.5); // m/s
     double inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
 
     double distCovered = 0; // in meters
@@ -144,7 +144,7 @@ class Robot {
 
         distCovered += dist;
 
-        double angle = upperArmRotate.rotateDist(0.25 * dist);
+        double angle = upperArmRotate.rotateDist(0.33 * dist);
         lowerArmRotate.addAngle(angle / upperArmRotate.getMaxDelta() * lowerArmRotate.getMaxDelta());
 
         upperLegRotate.addAngle(angle / upperArmRotate.getMaxDelta() * upperLegRotate.getMaxDelta());
