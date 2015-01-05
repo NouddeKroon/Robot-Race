@@ -165,7 +165,7 @@ public class RobotRace extends Base {
 
         // Converts colors to materials when lighting is enabled.
         gl.glEnable(GL_COLOR_MATERIAL);
-        gl.glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+        gl.glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
         // Enable textures. 
         gl.glEnable(GL_TEXTURE_2D);
