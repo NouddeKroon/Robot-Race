@@ -8,19 +8,8 @@ import static javax.media.opengl.GL2GL3.*;
  * Implementation of the terrain.
  */
 class Terrain {
-    Texture landscape;
+    static Texture landscape;
     int displayList;                    //Variable pointing to the display list.
-
-    /**
-     * Can be used to set up a display list.
-     */
-    public Terrain() {
-
-    }
-
-    public void setTexture(Texture landscape) {
-        this.landscape = landscape;
-    }
 
     /**
      * Draws the terrain. It calls the displaylist to draw itself, if it's already set, otherwise it enables the texture,

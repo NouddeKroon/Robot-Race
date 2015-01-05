@@ -7,12 +7,8 @@
  */
 
 import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.TextureIO;
 import robotrace.Base;
 import robotrace.Vector;
-
-import java.io.File;
-import java.io.IOException;
 
 import static javax.media.opengl.GL2.*;
 
@@ -134,12 +130,9 @@ public class RobotRace extends Base {
 
         // Initialize the camera
         camera = new Camera(gs, robots);
-        camera.update(0);
 
         // Initialize the terrain
         terrain = new Terrain();
-
-
     }
 
     /**
@@ -148,7 +141,6 @@ public class RobotRace extends Base {
      */
     @Override
     public void initialize() {
-
         // Enable blending.
         gl.glEnable(GL_BLEND);
         gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -183,36 +175,39 @@ public class RobotRace extends Base {
         // Try to load four textures, add more if you like.
         track = loadTexture("track.jpg");
         brick = loadTexture("brick.jpg");
-//        TestTrack.brick = brick;
         head = loadTexture("head.jpg");
         torso = loadTexture("torso.jpg");
 
+        landscape = loadTexture("terrainTexture.jpg");
+
+        // Assign the loaded textures to static variables for the different textured objects
         Robot.headTex = head;
         Robot.torsoTex = torso;
         Track.brick = brick;
         Track.track = track;
+        Terrain.landscape = landscape;
 
-//        startTimeDrawing = System.nanoTime();
-        lastTimeSceneDrawn = System.nanoTime();
-
-        //Try to load the terrain colour texture, give it to the terrain object.
-        landscape = loadTexture("terrainTexture.jpg");
-        terrain.setTexture(landscape);
-
+        // Retrieve an id for the display list which is used to draw a second time for the Picture in Picture view
         displayList = gl.glGenLists(1);
+
+        // Set to the current time such that when it is used for the first time to
+        // calculate the time difference between frames it results in a minimal difference.
+        lastTimeSceneDrawn = System.nanoTime();
     }
 
     /**
-     * Configures the viewing transform.
+     * Configures the viewing transform and calculates the time difference between this frame and the previous one.
      */
     @Override
     public void setView() {
-        // Calculate the difference in time since the previous moment we were here.
+        // Calculate the difference in time since the previous moment (last frame) we were here.
         long currentTime = System.nanoTime();
         long diffTimeFrames = currentTime - lastTimeSceneDrawn;
         lastTimeSceneDrawn = currentTime;
 
-        for (int i = 0; i < 4; i++) {
+        // Update the position of the robots here, which means that the camera can use the
+        // correct position of the robots to position itself and is not a frame behind.
+        for (int i = 0; i < robots.length; i++) {
             robots[i].updatePos(diffTimeFrames);
         }
 
@@ -291,20 +286,18 @@ public class RobotRace extends Base {
             drawAxisFrame();
         }
 
-        gl.glColor3f(0f, 0f, 0f);
-
         // Draw race track
         raceTrack.draw(gl);
 
         // Draw the 4 robots.
         if (!robotsInitialized) {
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < robots.length; i++) {
                 robots[i].drawAtPos(gl, glut);
             }
             robotsInitialized = true;
         } else {
             gl.glNewList(displayList, GL_COMPILE_AND_EXECUTE);
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < robots.length; i++) {
                 robots[i].drawAtPos(gl, glut);
             }
             gl.glEndList();
@@ -324,7 +317,6 @@ public class RobotRace extends Base {
         // Draw the 3 orthonormal axes, each the length of 1 unit (meter) and with their respective colors and a yellow origin.
         new AxisSystem().draw(gl, glut);
     }
-
 
     //Method drawing picture-in-picture, which is a static camera floating above the map.
     private void drawPictureInPicture(){
@@ -354,10 +346,7 @@ public class RobotRace extends Base {
 
         // Draw race track
         raceTrack.draw(gl);
-//
-//        for (int i = 0; i < 4; i++) {
-//            robots[i].drawAtPos(gl, glut);
-//        }
+
         gl.glCallList(displayList);
 
         // Draw terrain
