@@ -8,9 +8,56 @@ import javax.media.opengl.GL2;
 import java.util.Random;
 
 /**
- * Represents a Robot, to be implemented according to the Assignments.
+ * Represents a Robot implemented according to the Assignments.
  */
 class Robot {
+    // Size of the spheres used during drawing of the stick figure
+    static final double stickSphereRadius = 0.033f;
+
+    // Translation of the position of the center of the robot on top of the xy-plane
+    static final Vector torsoTrans = new Vector(0, 0, 0.75f);
+
+    // Coordinates for limbs relative to center of robot's torso
+    static final Vector neck = new Vector(0, 0, 0.25f);
+    static final Vector rightShoulder = new Vector(0.3f, 0, 0.2f);
+    static final Vector leftShoulder = new Vector(-0.3f, 0, 0.2f);
+    static final Vector rightHip = new Vector(0.15f, 0, -0.25f);
+    static final Vector leftHip = new Vector(-0.15f, 0, -0.25f);
+
+    // Coordinates for limbs relative to other limbs
+    static final Vector upperToLowerArm = new Vector(0, 0, -0.275);
+    static final Vector lowerArmToHand = new Vector(0, 0, -0.25);
+    static final Vector upperToLowerLeg = new Vector(0, 0, -0.19);
+    static final Vector lowerLegToFoot = new Vector(0, 0, -0.19);
+
+    // Head colors
+    float[] neckColor;
+    float[] headColor;
+    float[] scleraColor = {1, 1, 1};
+    float[] irisColor = {0, 0, 0};
+    float[] mouthColor = {0, 0, 0};
+    // Torso colors
+    float[] torsoColor;
+    float[] torsoScreenColor;
+    // Upper arm colors
+    float[] armColor;
+    float[] elbowColor;
+    // Lower arm colors
+    float[] lowerArmColor = {0.2f, 0.2f, 0.2f};
+    float[] hexPartColor = {0.1f, 0.1f, 0.1f};
+    // Hand colors
+    float[] handCylinderColor;
+    // Claw colors
+    float[] clawColor;
+    // Upper leg colors
+    float[] torsoJointColor;
+    float[] upperLegColor;
+    // Lower leg colors
+    float[] jointUpperLowerLegColor;
+    float[] lowerLegColor;
+    float[] footColor;
+
+    // Reference to the global state, to check if the track changed and determine whether to draw stick figures or not.
     GlobalState gs;
     // Keep a reference to the track the robot is on.
     private RaceTrack track;
@@ -20,75 +67,34 @@ class Robot {
     //Maintain which track is currently selected.
     private int trackNr;
 
+    // The textures to be mapped to the head and torso respectively.
     static Texture headTex;
     static Texture torsoTex;
 
-    double baseSpeed = 15 + 4 * (new Random().nextDouble() - 0.5); // m/s
-    double inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
+    // The speed with which the robot will run on a non-inclined path.
+    double baseSpeed;
+    // Factor with which the robot's speed increases/decreases on inclines.
+    double inclinationFactor;
 
-    double distCovered = 0; // in meters
+    double distCovered = 0; // In meters, since the start of the current race.
 
-    Vector pos = Vector.O;
-    Vector tangent = Vector.O;
-    Vector normal = Vector.O;
+    // Keep track of the last position, last tangent and last normal.
+    // This information along with the speed and frame time allow us to calculate the robot's new position and direction.
+    private Vector pos;
 
-    double stickSphereRadius = 0.033f;
-
-    // Translation for to position the center of the robot on top of the xy-plane
-    Vector torsoTrans = new Vector(0, 0, 0.75f);
-
-    // Coordinates for limbs relative to center of robot's torso
-    Vector neck = new Vector(0, 0, 0.25f);
-    Vector rightShoulder = new Vector(0.3f, 0, 0.2f);
-    Vector leftShoulder = new Vector(-0.3f, 0, 0.2f);
-    Vector rightHip = new Vector(0.15f, 0, -0.25f);
-    Vector leftHip = new Vector(-0.15f, 0, -0.25f);
-
-    // Coordinates for limbs relative to other limbs
-    Vector upperToLowerArm = new Vector(0, 0, -0.275);
-    Vector lowerArmToHand = new Vector(0, 0, -0.25);
-
-    Vector upperToLowerLeg = new Vector(0, 0, -0.19);
-    Vector lowerLegToFoot = new Vector(0, 0, -0.19);
-
+    // Objects which abstract the calculations of linear front-to-back-to-front rotation of the limbs.
     LimbRotation upperArmRotate = new LimbRotation(upperToLowerArm.length(), -22.5, 37.5);
     LimbRotation lowerArmRotate = new LimbRotation(lowerArmToHand.length(), -10, 50);
     LimbRotation upperLegRotate = new LimbRotation(upperToLowerLeg.length(), 0, 40);
     LimbRotation lowerLegRotate = new LimbRotation(lowerLegToFoot.length(), -40, 5);
 
-    //Head colors
-    float[] neckColor;
-    float[] headColor;
-    float[] scleraColor = {1, 1, 1};
-    float[] irisColor = {0, 0, 0};
-    float[] mouthColor = {0, 0, 0};
-    //Torso colors
-    float[] torsoColor;
-    float[] torsoScreenColor;
-    //Upper arm colors
-    float[] armColor;
-    float[] elbowColor;
-    //Lower arm colors
-    float[] lowerArmColor = {0.2f, 0.2f, 0.2f};
-    float[] hexPartColor = {0.1f, 0.1f, 0.1f};
-    //Hand colors
-    float[] handCylinderColor;
-    //Claw colors
-    float[] clawColor;
-    //Upper leg colors
-    float[] torsoJointColor;
-    float[] upperLegColor;
-    //Lower leg colors
-    float[] jointUpperLowerLegColor;
-    float[] lowerLegColor;
-    float[] footColor;
-
+    // Display list for all major loops
     static int lowerArmConeDisplayList = 0;
     static int lowerArmHexPartDisplayList = 0;
     static int clawDisplayList = 0;
-    static int mouthDisplayList = 0;
     static int headDisplayList = 0;
 
+    // Used as a parameter during drawing to specify the side of the robot.
     enum Side {
         Left,
         Right
@@ -99,7 +105,6 @@ class Robot {
      */
     private final Material material;
 
-
     /**
      * Constructs the robot with initial parameters.
      */
@@ -109,15 +114,39 @@ class Robot {
         this.trackLane = trackLane;
         this.gs = gs;
 
+        // Set a random speed of the robot on horizontal paths relative to common base speed of 15 m/s.
+        baseSpeed = 15 + 4 * (new Random().nextDouble() - 0.5); // m/s
+        // Set the factor with which the robot's speed varies depending on the inclination angle.
+        inclinationFactor = 0.5 + 0.5 * new Random().nextDouble();
+
         // Add phase shift of 1/8 period as offset to the upper leg rotation for more natural looking movement.
         lowerLegRotate.addAngle(0.25 * lowerLegRotate.getMaxDelta());
     }
 
-    public void incTime(long timeDiff) {
-        // TODO: move according to time difference.
+    // Getter for position of the robot
+    public Vector getPosition() {
+        return pos;
     }
 
+    // Calculate the tangent to the current path of the robot.
+    public Vector getTangent() {
+        return track.getTangent(distCovered, trackLane);
+    }
+
+    // Calculate the normal to the current path of the robot.
+    public Vector getNormal() {
+        return track.getNormal(distCovered, trackLane);
+    }
+
+    /**
+     * Calculate the new position and direction based on the current position, direction (normal, tangent of path),
+     * robot's speed (dependent on the inclination angle) and the time difference since last frame.
+     *
+     * @param timeDiff the time difference between drawing the current frame and this frame.
+     */
     public void updatePos(long timeDiff) {
+        final double minimizeSlipCoEfficient = 0.33;
+
         //If a new track is selected, reset the start distance so the robots start back at the start line.
         if (this.trackNr != track.trackNr) {
             this.distCovered = 0;
@@ -125,7 +154,7 @@ class Robot {
         }
 
         // Get the previous tangent to calculate the incline
-        tangent = track.getTangent(distCovered, trackLane);
+        Vector tangent = track.getTangent(distCovered, trackLane);
 
         // Calculate an incline factor by dividing the angle between the tangent and the projection of the tangent on
         // the XOY plane by PI / 2. The z coord will specify whether we are moving up an incline or down.
@@ -134,23 +163,30 @@ class Robot {
 
         double posNegIncline = tangent.z() >= 0 ? 1 : -1;
         double inclination = posNegIncline * Math.asin(tangent.cross(projectedTangent).length()) / (0.5 * Math.PI);
+
         double speed = (1 + (-1) * inclinationFactor * inclination) * baseSpeed;
         double dist = (timeDiff / 10e9) * speed;
 
         distCovered += dist;
 
-        double angle = upperArmRotate.rotateDist(0.33 * dist);
-        lowerArmRotate.addAngle(angle / upperArmRotate.getMaxDelta() * lowerArmRotate.getMaxDelta());
+        // Tell the end of upper arm to travel a distance
+        double angle = upperArmRotate.rotateDist(minimizeSlipCoEfficient * dist);
 
+        // All the rotation have the same period therefore add the scaled angle to them all.
+        lowerArmRotate.addAngle(angle / upperArmRotate.getMaxDelta() * lowerArmRotate.getMaxDelta());
         upperLegRotate.addAngle(angle / upperArmRotate.getMaxDelta() * upperLegRotate.getMaxDelta());
         lowerLegRotate.addAngle(angle / upperArmRotate.getMaxDelta() * lowerLegRotate.getMaxDelta());
 
         pos = track.getPositionOnLane(distCovered, trackLane);
-        tangent = track.getTangent(distCovered, trackLane);
-        normal = track.getNormal(distCovered, trackLane);
     }
 
+    /**
+     * Draw the robot at the last calculated position and with the appropriate direction.
+     */
     public void drawAtPos(GL2 gl, GLUT glut) {
+        Vector normal = track.getNormal(distCovered, trackLane);
+        Vector tangent = track.getTangent(distCovered, trackLane);
+
         gl.glPushMatrix();
 
         Util.translate(gl, pos);
@@ -160,8 +196,11 @@ class Robot {
         gl.glPopMatrix();
     }
 
-    //Method that draws head model. This method assumes that (0,0,0) coordinate is the joint connecting the head
-    //to the body. You can easily change the variables defined at the start of the method to reshape the head.
+
+    /**
+     * Method that draws the head model. This method assumes that (0,0,0) coordinate is the joint connecting the head
+     * to the body. You can easily change the variables defined at the start of the method to reshape the head.
+     */
     private void drawHead(GL2 gl, GLUT glut) {
         double headWidth = 1.0;
         double headHeight = 0.5;
@@ -204,15 +243,18 @@ class Robot {
                 method makeFaceVertex4 to draw the quads, which automatically does the normal vectors, as long as we
                 make sure to define the vertices in a counterclockwise fashion (otherwise normal is inverted). */
             gl.glColor3f(headColor[0], headColor[1], headColor[2]);         //Set color to color of head.
+            //TODO(noud): Zou je iets bij de display lists kunnen schrijven?
             if (headDisplayList != 0) {
                 gl.glCallList(headDisplayList);
             } else {
                 headDisplayList = gl.glGenLists(1);
                 gl.glNewList(headDisplayList, gl.GL_COMPILE_AND_EXECUTE);
 
+                // The head texture image is split into four square the first (top left) is the front of the head,
+                // top right is the back side, bottom left is one of the sides and bottom right is the top of the head.
                 headTex.enable(gl);
                 headTex.bind(gl);
-//            gl.glColor3f(1,1,1);
+
                 gl.glBegin(gl.GL_QUADS);                                           //Start drawing quads.
 
                 final int FRONT = 0, BACK = 1, TOP_LEFT = 0, TOP_RIGHT = 1, BOTTOM_LEFT = 2, BOTTOM_RIGHT = 3;
@@ -235,6 +277,7 @@ class Robot {
                         coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
                         coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
                         coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2]);
+                // Map all the coordinates to the top left square in the texture.
                 gl.glTexCoord2d(0, 1.0);
                 gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
                 gl.glTexCoord2d(0.5, 1.0);
@@ -249,7 +292,7 @@ class Robot {
                         coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2],
                         coords[BACK][BOTTOM_LEFT][0], coords[BACK][BOTTOM_LEFT][1], coords[BACK][BOTTOM_LEFT][2],
                         coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
-
+                // Map all the coordinates to the top right square in the texture.
                 gl.glTexCoord2d(0.5, 1.0);
                 gl.glVertex3d(coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
                 gl.glTexCoord2d(1, 1.0);
@@ -264,7 +307,7 @@ class Robot {
                         coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
                         coords[FRONT][BOTTOM_LEFT][0], coords[FRONT][BOTTOM_LEFT][1], coords[FRONT][BOTTOM_LEFT][2],
                         coords[BACK][TOP_LEFT][0], coords[BACK][TOP_LEFT][1], coords[BACK][TOP_LEFT][2]);
-
+                // Map all the coordinates to the bottom left square in the texture.
                 gl.glTexCoord2d(0, 0.5);
                 gl.glVertex3d(coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2]);
                 gl.glTexCoord2d(0.5, 0.5);
@@ -279,7 +322,7 @@ class Robot {
                         coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
                         coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2],
                         coords[FRONT][BOTTOM_RIGHT][0], coords[FRONT][BOTTOM_RIGHT][1], coords[FRONT][BOTTOM_RIGHT][2]);
-
+                // Map all the coordinates to the bottom right square in the texture.
                 gl.glTexCoord2d(0, 0.5);
                 gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
                 gl.glTexCoord2d(0.5, 0.5);
@@ -294,7 +337,7 @@ class Robot {
                         coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2],
                         coords[FRONT][TOP_LEFT][0], coords[FRONT][TOP_LEFT][1], coords[FRONT][TOP_LEFT][2],
                         coords[BACK][TOP_RIGHT][0], coords[BACK][TOP_RIGHT][1], coords[BACK][TOP_RIGHT][2]);
-
+                // Map all the coordinates to the bottom left square in the texture.
                 gl.glTexCoord2d(0.5, 0.5);
                 gl.glVertex3d(coords[FRONT][TOP_RIGHT][0], coords[FRONT][TOP_RIGHT][1], coords[FRONT][TOP_RIGHT][2]);
                 gl.glTexCoord2d(0.5, 0.0);
@@ -312,6 +355,7 @@ class Robot {
 
                 gl.glEnd();             //We are done drawing quads.
                 headTex.disable(gl);
+
                 //Draw antenna.
                 gl.glPushMatrix();                  //Push a new matrix.
                 gl.glTranslated(-0.25 * headWidth, -0.25 * headDepth, neckSize + 0.8 * headHeight); //Translate to location of antenna.
@@ -370,8 +414,14 @@ class Robot {
         }
     }
 
-    // Draw the robot's arm.
-    // The arm is drawn with its shoulder joint centered on the x-y plane hanging down from the origin
+    /**
+     * Draw the robot's arm.
+     * The arm is drawn with its shoulder joint centered on the x-y plane hanging down from the origin
+     *
+     * @param gl OpenGl context
+     * @param glut GLUT context
+     * @param side The side used to determine whether to draw the animation out of phase.
+     */
     private void drawArm(GL2 gl, GLUT glut, Side side) {
         double armRadius = 0.05;
         double elbowRadius = 0.055;
@@ -398,14 +448,23 @@ class Robot {
         Util.translate(gl, upperToLowerArm);
         // Give the lower arm a base rotation for a more "natural" stance.
         gl.glRotated(20, 1, 1, 0);
+
+        // Retrieve the current angle determined for the animation of the lower arm relative to the upper arm.
+        // The two arms are exactly half a period out of phase with each other.
         double angle = side == Side.Right ? lowerArmRotate.getAngle() : lowerArmRotate.getAngleHalfPhaseShift();
         gl.glRotated(angle, 1, 0, 0);
         drawLowerArm(gl, glut, side);
         gl.glPopMatrix();
     }
 
-    // Draw the robot's lower arm.
-    // The lower arm is drawn centered on the x-y plane hanging down from the origin
+    /**
+     * Draw the robot's lower arm.
+     * The lower arm is drawn centered on the x-y plane hanging down from the origin
+     *
+     * @param gl OpenGl context
+     * @param glut GLUT context
+     * @param side The side used to determine whether to draw the animation out of phase.
+     */
     private void drawLowerArm(GL2 gl, GLUT glut, Side side) {
         // specify the top circle used for the "cut off" cone of the lower arm
         Vector topCirclePos = new Vector(0.02, 0, 0.2);
@@ -430,6 +489,7 @@ class Robot {
 
             gl.glColor3f(lowerArmColor[0], lowerArmColor[1], lowerArmColor[2]);
 
+            //TODO(Noud): ook hier een comment over de display list graag.
             if (lowerArmConeDisplayList != 0) {
                 gl.glCallList(lowerArmConeDisplayList);
             } else {
@@ -598,6 +658,7 @@ class Robot {
                 */
             gl.glColor3f(hexPartColor[0], hexPartColor[1], hexPartColor[2]);        //Set color
 
+            //TODO(Noud): comments display list.
             if (lowerArmHexPartDisplayList != 0) {
                 gl.glCallList(lowerArmHexPartDisplayList);
             } else {
@@ -674,12 +735,18 @@ class Robot {
         }
 
         // draw the hand at the wrist joint
-        drawHand(gl, glut, side);
+        drawHand(gl, glut);
     }
 
-    // Draw the robot's hand.
-    // The hand is drawn centered on the x-y plane hanging down from the origin
-    private void drawHand(GL2 gl, GLUT glut, Side side) {
+
+    /**
+     * Draw the robot's hand.
+     * The hand is drawn centered on the x-y plane hanging down from the origin
+     *
+     * @param gl OpenGl context
+     * @param glut GLUT context
+     */
+    private void drawHand(GL2 gl, GLUT glut) {
         double diskHeight = 0.05;
         double diskRadius = 0.05;
 
@@ -697,6 +764,8 @@ class Robot {
             gl.glPushMatrix();
             gl.glColor3f(clawColor[0], clawColor[1], clawColor[2]);
             gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
+
+            //TODO(Noud): comments display list.
             if (clawDisplayList != 0){
                 gl.glCallList(clawDisplayList);
             } else {
@@ -724,11 +793,15 @@ class Robot {
         }
     }
 
-    // The claw is drawn centered on the y-z plane on the side of the negative x-axis and down from the origin along the z-axis
+    /**
+     * The claw is drawn centered on the y-z plane on the side of the negative x-axis and down from the origin along the z-axis
+     *
+     * @param gl OpenGl context
+     */
     private void drawClaw(GL2 gl) {
         double depth = 0.025;
         // the claw is composed of several circular segments, draw each of the segments according to the following
-        // specifications and line the up to make more complex curved claw
+        // specifications and line them up to make a more complexly curved claw.
         double[] angles = {40, 15, 15, 30, 40};
         double[] radii = {0.025, 0.075, 0.05, 0.15, 0.2};
         double width = 0.05;
@@ -736,8 +809,6 @@ class Robot {
         double[][] vertices = new double[4][2];
 
         gl.glPushMatrix();
-
-
         // The below draw calls position the claw lying on the x-y plane. now rotate to "hang off" of the y-z plane
         gl.glRotated(-90, 0, 1, 0);
         // Scale the claw to a more appropriate size
@@ -810,16 +881,23 @@ class Robot {
 
     }
 
-    /*
+    /**
      * Method that draws the upper leg, and then calls the lower leg method to draw itself. It assumes that the
      * coordinate (0,0,0) corresponds with the leg joint connecting the leg to the torso. It assumes that the z
      * direction is straight downwards.
+     *
+     * @param gl OpenGl context
+     * @param glut GLUT context
+     * @param side The side used to determine whether to draw the animation out of phase.
     */
     private void drawLeg(GL2 gl, GLUT glut, Side side) {
         double upperLegWidth = 0.2;
         double torsoJointRadius = 0.1;
 
         gl.glPushMatrix();
+
+        // Retrieve the current angle determined for the animation of the upper leg relative to the torso.
+        // The two legs are exactly half a period out of phase with each other.
         gl.glRotated(side == Side.Left ? upperLegRotate.getAngle() : upperLegRotate.getAngleHalfPhaseShift(), 1, 0, 0);
 
         if (gs.showStick) {
@@ -846,11 +924,19 @@ class Robot {
         gl.glPopMatrix();       //Pop the matrix.
     }
 
-    //Method that draws the lower leg, and calls the foot to draw itself. It assums that the coordinate (0,0,0)
-    //corresponds with the knee joint. It also assumes that the z direction is in the direction of the upper knee.
+    /**
+     * Method that draws the lower leg, and calls the foot to draw itself. It assumes that the coordinate (0,0,0)
+     * corresponds with the knee joint. It also assumes that the z direction is in the direction of the upper knee.
+     *
+     * @param gl OpenGl context
+     * @param glut GLUT context
+     * @param side The side used to determine whether to draw the animation out of phase.
+     */
     private void drawLowerLeg(GL2 gl, GLUT glut, Side side) {
         double lowerLegWidth = 0.2;
         double angleFootLowerLeg = 10;
+        // Retrieve the current angle determined for the animation of the lower leg relative to the upper leg.
+        // The two legs are exactly half a period out of phase with each other.
         double kneeAngle = side == Side.Left ? lowerLegRotate.getAngle() : lowerLegRotate.getAngleHalfPhaseShift();
 
         if (gs.showStick) {
@@ -861,17 +947,16 @@ class Robot {
             Util.drawSphere(gl, glut, stickSphereRadius, lowerLegToFoot);
             Util.drawLine(gl, Vector.O, lowerLegToFoot);
         } else {
-
             gl.glPushMatrix();                      //Push the matrix.
 
-                /*
-                 * Start drawing the joint connecting upper and lower leg. Translate to the rotation point of the lower
-                 * leg, and then rotate half the angle between lower and upper leg. Looked upon from the side the joint
-                 * is an isosceles triangle, where the vertex angle is the angle between the upper and lower leg, and
-                 * the length of the legs of the triangle is the leg-width. We make use of the makeFaceVertex function
-                 * to draw the shapes, which automatically sets the normals correctly, as long as we define the vertices
-                 * in counterclockwise fashion.
-                */
+            /*
+             * Start drawing the joint connecting upper and lower leg. Translate to the rotation point of the lower
+             * leg, and then rotate half the angle between lower and upper leg. Looked upon from the side the joint
+             * is an isosceles triangle, where the vertex angle is the angle between the upper and lower leg, and
+             * the length of the legs of the triangle is the leg-width. We make use of the makeFaceVertex function
+             * to draw the shapes, which automatically sets the normals correctly, as long as we define the vertices
+             * in counterclockwise fashion.
+            */
 
             //Translate to the vertex of the isosceles triangle and rotate so that the y axis is along the median.
             gl.glTranslated(0, -0.5 * lowerLegWidth, 0);
@@ -909,13 +994,13 @@ class Robot {
             glut.glutSolidCube(1);                                                  //Draw a unit cube
             gl.glPopMatrix();                                                       //Return to previous matrix.
 
-                /*
-                We draw 2 triangles and a quad as a joint connecting lower leg to foot. Seen from the side, this is
-                again a triangle, of which the bottom edge runs along the foot, and the top vertex aligns with the
-                back edge of the lower leg, of which the coordinates are defined by (x,yOffsetLowerLeg,zOffsetLowerLeg).
-                Using makeFaceVertex function so normals are done automatically, as long as we define vertices in
-                counterclockwise fashion.
-                */
+            /*
+             * We draw 2 triangles and a quad as a joint connecting lower leg to foot. Seen from the side, this is
+             * again a triangle, of which the bottom edge runs along the foot, and the top vertex aligns with the
+             * back edge of the lower leg, of which the coordinates are defined by (x,yOffsetLowerLeg,zOffsetLowerLeg).
+             * Using makeFaceVertex function so normals are done automatically, as long as we define vertices in
+             * counterclockwise fashion.
+            */
             gl.glTranslated(0, 0.5 * lowerLegWidth, -0.5 * lowerLegToFoot.length()); //Translate to corner of the joint.
             gl.glRotated(angleFootLowerLeg, 1, 0, 0);             //Rotate with the angle between foot and lower leg.
             //Calculate y and z coordinates of lower leg edge. Add 2mm to zOffsetLowerLeg to combat rounding errors.
@@ -946,13 +1031,13 @@ class Robot {
         }
     }
 
-    /*
+    /**
      * Method that draws the foot. It assumes that the (0,0,0) coordinate is on the joint connecting the foot
      * to the lower leg. It also assumes that the Z direction is straight upwards. The foot consists of 5 quads
      * (the top is open), together forming a box where the front side is slanted. We again use the
      * makeFaceVertex method to draw the quads, which does the normal for us, as long as we define the vertices in
      * clockwise fashion.
-    */
+     */
     private void drawFoot(GL2 gl) {
         double width = 0.2;
 
@@ -996,42 +1081,39 @@ class Robot {
 
     // Draw a simple angular shoulder centered round the origin with an offset to line up with the shoulder joint of the torso.
     private void drawShoulder(GL2 gl) {
-        {
-            gl.glBegin(gl.GL_TRIANGLES);
-            // front face
-            gl.glNormal3d(0, 1, 0);
-            gl.glVertex3d(-0.05, 0.075, 0.05);
-            gl.glVertex3d(0.1, 0.075, 0.05);
-            gl.glVertex3d(-0.05, 0.075, -0.1);
+        gl.glBegin(gl.GL_TRIANGLES);
+        // front face
+        gl.glNormal3d(0, 1, 0);
+        gl.glVertex3d(-0.05, 0.075, 0.05);
+        gl.glVertex3d(0.1, 0.075, 0.05);
+        gl.glVertex3d(-0.05, 0.075, -0.1);
 
-            // back face
-            gl.glNormal3d(0, -1, 0);
-            gl.glVertex3d(-0.05, -0.075, 0.05);
-            gl.glVertex3d(0.1, -0.075, 0.05);
-            gl.glVertex3d(-0.05, -0.075, -0.1);
-            gl.glEnd();
+        // back face
+        gl.glNormal3d(0, -1, 0);
+        gl.glVertex3d(-0.05, -0.075, 0.05);
+        gl.glVertex3d(0.1, -0.075, 0.05);
+        gl.glVertex3d(-0.05, -0.075, -0.1);
+        gl.glEnd();
 
-            gl.glBegin(gl.GL_QUADS);
-            // top face
-            gl.glNormal3d(0, 0, 1);
-            gl.glVertex3d(-0.05, -0.075, 0.05);
-            gl.glVertex3d(0.1, -0.075, 0.05);
-            gl.glVertex3d(0.1, 0.075, 0.05);
-            gl.glVertex3d(-0.05, 0.075, 0.05);
+        gl.glBegin(gl.GL_QUADS);
+        // top face
+        gl.glNormal3d(0, 0, 1);
+        gl.glVertex3d(-0.05, -0.075, 0.05);
+        gl.glVertex3d(0.1, -0.075, 0.05);
+        gl.glVertex3d(0.1, 0.075, 0.05);
+        gl.glVertex3d(-0.05, 0.075, 0.05);
 
-            // face connected to arm
-            Util.makeFaceVertex4(gl, 0.1, -0.075, 0.05,
-                    -0.05, -0.075, -0.1,
-                    -0.05, 0.075, -0.1,
-                    0.1, 0.075, 0.05);
-            gl.glEnd();
-
-        }
+        // face connected to arm
+        Util.makeFaceVertex4(gl, 0.1, -0.075, 0.05,
+                -0.05, -0.075, -0.1,
+                -0.05, 0.075, -0.1,
+                0.1, 0.075, 0.05);
+        gl.glEnd();
     }
 
     // Draw the main component of the robot
     private void drawTorso(GL2 gl, GLUT glut) {
-        // The coordinate in the middle of the between the two hip joints
+        // The coordinate in the middle between the two hip joints
         Vector centerBottom = new Vector(0, 0, -0.25f);
         final double depth = 0.35 / 2;
         double spaceToShoulderJoint = 0.05;
@@ -1085,6 +1167,8 @@ class Robot {
             }
             };
 
+            // The torso texture image is split into four square the first (top left) is the front of the torso,
+            // top right is the back side, bottom left is one of the sides and bottom right is the top of the torso.
             torsoTex.enable(gl);
             torsoTex.bind(gl);
             gl.glBegin(gl.GL_QUADS);
@@ -1294,6 +1378,7 @@ class Robot {
     }
 }
 
+// Abstraction on rotation of a limb with a length between two specified angles.
 class LimbRotation {
     private double limbLength;
     // All angles are in degrees (as that is what openGL uses).
@@ -1313,38 +1398,48 @@ class LimbRotation {
         return angle;
     }
 
-    public double getDeltaAngle() {
-        return angle - minAngle;
-    }
-
-    public double getMinAngle() {
-        return minAngle;
-    }
-
     public double getMaxDelta() {
         return maxDelta;
     }
 
+    /**
+     * Calculate and add the angle for a distance traveled on the circle's path.
+     *
+     * @param dist distance moved on the path
+     * @return calculated angle
+     */
     public double rotateDist(double dist) {
-        double circlePathLength = Math.toRadians(maxDelta) * limbLength;
+        double circlePathLength = Math.toRadians(maxDelta) * limbLength;  // arc length of segment of a circle between the angles
 
         double travelAngle = Math.toDegrees((dist % (2 * circlePathLength)) / limbLength);  // Multiply path by 2 for a complete cycle
         addAngle(travelAngle);
         return travelAngle;
     }
 
+    /**
+     * Calculate the angle shifted by half the period.
+     * @return the shifted angle (in degrees)
+     */
     public double getAngleHalfPhaseShift() {
         double shiftedAngle = angle + maxDelta;
 
+        // The angle might have become to large
         if (shiftedAngle > minAngle + maxDelta) {
             return 2 * (minAngle + maxDelta) - shiftedAngle;
-        } else if (shiftedAngle < minAngle) {
+        } else if (shiftedAngle < minAngle) {  // Or the angle might have become to small
             return 2 * minAngle - shiftedAngle;
-        } else {
+        } else {  // Or the angle might be just right.
             return shiftedAngle;
         }
     }
 
+    /**
+     * Add angle to the current position in the segment of a circle. If the angle goes beyond one of the specified angles
+     * it will calculate the difference between the new angle and the allowed angle and add negative difference to the
+     * allowed angle.
+     *
+     * @param addAngle angle to be added (in degrees)
+     */
     public void addAngle(double addAngle) {
         angle += currentDirection * (addAngle % (2 * maxDelta));
 

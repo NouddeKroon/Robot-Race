@@ -239,17 +239,17 @@ class HelicopterRobotCam extends Cam {
     }
 
     public Vector getCenterPoint(double t) {
-        return robot.pos;
+        return robot.getPosition();
     }
 
     public Vector getEyePoint(double t) {
         // Do not view from straight above, as this will give calculation problems (being orthogonal, etc.).
-        return robot.pos.add(new Vector(0.00001, 0, gs.vDist));
+        return robot.getPosition().add(new Vector(0.00001, 0, gs.vDist));
     }
 
     public Vector getUp(double t) {
         // The robot's tangent is in the direction of its path, therefore we view it from above along its path.
-        return robot.tangent;
+        return robot.getTangent();
     }
 }
 
@@ -265,18 +265,18 @@ class MotorcycleRobotCam extends Cam {
 
     public Vector getCenterPoint(double t) {
         // The Robot's head is the focus of the camera.
-        return robot.pos.add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
+        return robot.getPosition().add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
     }
 
     public Vector getEyePoint(double t) {
         // The eye is {@code gs.vDist} meters to the side of the robot.
-        Vector directedOutward = robot.tangent.cross(robot.normal);  // These vectors are orthogonal and the result is unit length
-        return robot.pos.add(directedOutward.scale(gs.vDist))
+        Vector directedOutward = robot.getTangent().cross(robot.getNormal());  // These vectors are orthogonal and the result is unit length
+        return robot.getPosition().add(directedOutward.scale(gs.vDist))
                         .add(new Vector(0, 0, 1.25));  //FIXME: hack for robot height
     }
 
     public Vector getUp(double t) {
-        return robot.normal;
+        return robot.getNormal();
     }
 }
 
@@ -292,18 +292,18 @@ class FirstPersonRobotCam extends Cam {
 
     public Vector getCenterPoint(double t) {
         // Look at a point some distance (gs.vDist) ahead in the current direction.
-        return robot.pos.add(robot.tangent.scale(gs.vDist - 0.25))
+        return robot.getPosition().add(robot.getTangent().scale(gs.vDist - 0.25))
                         .add(new Vector(0, 0, 1.80));  //FIXME: hack for robot height
     }
 
     public Vector getEyePoint(double t) {
         // Look from just the tip of the robot head.
-        return robot.pos.add(robot.tangent.scale(0.25))
+        return robot.getPosition().add(robot.getTangent().scale(0.25))
                         .add(new Vector(0, 0, 1.80));  //FIXME: hack for robot height
     }
 
     public Vector getUp(double t) {
-        return robot.normal;
+        return robot.getNormal();
     }
 }
 
