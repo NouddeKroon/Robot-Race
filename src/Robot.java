@@ -7,11 +7,6 @@ import javax.media.opengl.GL2;
 
 import java.util.Random;
 
-import static javax.media.opengl.GL.GL_TRIANGLES;
-import static javax.media.opengl.GL2.GL_COMPILE_AND_EXECUTE;
-import static javax.media.opengl.GL2.GL_POLYGON;
-import static javax.media.opengl.GL2GL3.GL_QUADS;
-
 /**
  * Represents a Robot, to be implemented according to the Assignments.
  */
@@ -213,12 +208,12 @@ class Robot {
                 gl.glCallList(headDisplayList);
             } else {
                 headDisplayList = gl.glGenLists(1);
-                gl.glNewList(headDisplayList, GL_COMPILE_AND_EXECUTE);
+                gl.glNewList(headDisplayList, gl.GL_COMPILE_AND_EXECUTE);
 
                 headTex.enable(gl);
                 headTex.bind(gl);
 //            gl.glColor3f(1,1,1);
-                gl.glBegin(GL_QUADS);                                           //Start drawing quads.
+                gl.glBegin(gl.GL_QUADS);                                           //Start drawing quads.
 
                 final int FRONT = 0, BACK = 1, TOP_LEFT = 0, TOP_RIGHT = 1, BOTTOM_LEFT = 2, BOTTOM_RIGHT = 3;
                 double[][][] coords = { /* coords of front face: */ {
@@ -351,7 +346,7 @@ class Robot {
                 gl.glTranslated(0, headDepth + 0.015, 0.5 * neckSize + 0.3 * headHeight);   //Translate to mouth position.
 
                 //The mouth is a polygon of which the top side is a straight line, and the bottom side are points on a circle.
-                gl.glBegin(GL_POLYGON);             //Begin drawing a polygon.
+                gl.glBegin(gl.GL_POLYGON);             //Begin drawing a polygon.
                 gl.glNormal3d(0, 1, 0);               //Set normal vector
                 //Draw the top side of the mouth.
                 gl.glVertex3d(-0.15 * headWidth, 0, 0);
@@ -706,7 +701,7 @@ class Robot {
                 gl.glCallList(clawDisplayList);
             } else {
                 clawDisplayList = gl.glGenLists(1);
-                gl.glNewList(clawDisplayList,GL_COMPILE_AND_EXECUTE);
+                gl.glNewList(clawDisplayList, gl.GL_COMPILE_AND_EXECUTE);
                 drawClaw(gl);
                 gl.glEndList();
             }
@@ -758,7 +753,7 @@ class Robot {
                 gl.glRotated(-angles[angle_idx - 1], 0, 1, 0);
                 gl.glTranslated(radii[angle_idx - 1] - radii[angle_idx], 0, 0);
             }
-            gl.glBegin(GL_QUADS);
+            gl.glBegin(gl.GL_QUADS);
 
             // Split up the angle into 2 degree pieces and draw quads to realize the curvature
             for (int i = 0; i < angles[angle_idx]; i += 2) {
@@ -804,7 +799,7 @@ class Robot {
         }
 
         // close off the claw. The last coordinates in vertices are coordinates for the final piece of the final segment
-        gl.glBegin(GL_QUADS);
+        gl.glBegin(gl.GL_QUADS);
         Util.makeFaceVertex4(gl, vertices[2][0], -depth, vertices[2][1],
                 vertices[3][0], -depth, vertices[3][1],
                 vertices[3][0], depth, vertices[3][1],
@@ -887,7 +882,7 @@ class Robot {
             double medianLength = lowerLegWidth * Math.cos(Math.toRadians(0.5 * kneeAngle));
             double baseLength = 2 * lowerLegWidth * Math.sin(Math.toRadians(-0.5 * kneeAngle));
             //Draw the right side of the joint.
-            gl.glBegin(GL_TRIANGLES);
+            gl.glBegin(gl.GL_TRIANGLES);
             Util.makeFaceVertex3(gl, 0.5 * lowerLegWidth, 0, 0,
                     0.5 * lowerLegWidth, medianLength, -0.5 * baseLength,
                     0.5 * lowerLegWidth, medianLength, 0.5 * baseLength);
@@ -898,7 +893,7 @@ class Robot {
             gl.glEnd();
 
             //Draw the front side of the joint.
-            gl.glBegin(GL_QUADS);
+            gl.glBegin(gl.GL_QUADS);
             Util.makeFaceVertex4(gl, -0.5 * lowerLegWidth, medianLength, 0.5 * baseLength,
                     0.5 * lowerLegWidth, medianLength, 0.5 * baseLength,
                     0.5 * lowerLegWidth, medianLength, -0.5 * baseLength,
@@ -926,7 +921,7 @@ class Robot {
             //Calculate y and z coordinates of lower leg edge. Add 2mm to zOffsetLowerLeg to combat rounding errors.
             double yOffsetLowerLeg = -lowerLegWidth * Math.cos(Math.toRadians(angleFootLowerLeg));
             double zOffsetLowerLeg = lowerLegWidth * Math.sin(Math.toRadians(angleFootLowerLeg)) + 0.002;
-            gl.glBegin(GL_TRIANGLES);
+            gl.glBegin(gl.GL_TRIANGLES);
             //Draw right side of joint
             Util.makeFaceVertex3(gl, 0.5 * lowerLegWidth, 0, 0,
                     0.5 * lowerLegWidth, yOffsetLowerLeg, zOffsetLowerLeg,
@@ -937,7 +932,7 @@ class Robot {
                     -0.5 * lowerLegWidth, yOffsetLowerLeg, zOffsetLowerLeg);
             gl.glEnd();
             //Draw back side of joint
-            gl.glBegin(GL_QUADS);
+            gl.glBegin(gl.GL_QUADS);
             Util.makeFaceVertex4(gl, 0.5 * lowerLegWidth, -lowerLegWidth, 0,
                     0.5 * lowerLegWidth, yOffsetLowerLeg, zOffsetLowerLeg,
                     -0.5 * lowerLegWidth, yOffsetLowerLeg, zOffsetLowerLeg,
@@ -964,7 +959,7 @@ class Robot {
         gl.glColor3f(footColor[0], footColor[1], footColor[2]);        //Set color to foot color.
 
         //Draw right side of foot
-        gl.glBegin(GL_QUADS);
+        gl.glBegin(gl.GL_QUADS);
         Util.makeFaceVertex4(gl, 0.5 * width, -0.5 * width, 0,
                 0.5 * width, -0.5 * width, -0.07,
                 0.5 * width, 0.65 * width, -0.07,
@@ -1092,7 +1087,7 @@ class Robot {
 
             torsoTex.enable(gl);
             torsoTex.bind(gl);
-            gl.glBegin(GL_QUADS);
+            gl.glBegin(gl.GL_QUADS);
 
             //Draw front side of head
             Util.setNormalVertex3(gl,
