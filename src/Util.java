@@ -3,15 +3,29 @@ import robotrace.Vector;
 
 import javax.media.opengl.GL2;
 
+// Collection of utility functions
 class Util {
-    // Convenience method to draw a sphere at the position specified by POS
-    static void drawSphere(GL2 gl, GLUT glut, double diameter, Vector pos) {
+    /**
+     * Convenience function to draw a sphere centered at the position specified by {@code pos}.
+     *
+     * @param gl OpenGL context
+     * @param glut GLUT context
+     * @param radius radius of the sphere
+     * @param pos center point of the sphere
+     */
+    static void drawSphere(GL2 gl, GLUT glut, double radius, Vector pos) {
         gl.glTranslated(pos.x(), pos.y(), pos.z());
-        glut.glutSolidSphere(diameter, 10, 10);
+        glut.glutSolidSphere(radius, 10, 10);
         gl.glTranslated(-pos.x(), -pos.y(), -pos.z());
     }
 
-    // convenience method to draw a line between two specified vectors
+    /**
+     * Convenience function to draw a line between two points.
+     *
+     * @param gl OpenGL context
+     * @param p1 first point
+     * @param p2 second point
+     */
     static void drawLine(GL2 gl, Vector p1, Vector p2) {
         gl.glBegin(gl.GL_LINES);
         gl.glVertex3d(p1.x(), p1.y(), p1.z());
@@ -19,12 +33,23 @@ class Util {
         gl.glEnd();
     }
 
-    // convenience method to translate to the position of tr vector
+    /**
+     * Convenience function to translate to the position of {@code tr} vector
+     * @param gl OpenGl context
+     * @param tr position vector to translate to.
+     */
     static void translate(GL2 gl, Vector tr) {
         gl.glTranslated(tr.x(), tr.y(), tr.z());
     }
 
-    // convenience method to rotate the axis system to new orthonormal system specified by basis{X,Y,Z}.
+    /**
+     * Convenience function to rotate the axis system to new orthonormal system specified by basis{X,Y,Z}.
+     *
+     * @param gl OpenGL context
+     * @param basisX Vector to which the X-axis is rotated
+     * @param basisY Vector to which the Y-axis is rotated
+     * @param basisZ Vector to which the Z-axis is rotated
+     */
     static void rotate(GL2 gl, Vector basisX, Vector basisY, Vector basisZ) {
         // Specify the rotation matrix in row Major order.
         double[] rotMatrix = {basisX.x(), basisX.y(), basisX.z(), 0,
@@ -35,16 +60,21 @@ class Util {
         gl.glMultMatrixd(rotMatrix, 0);
     }
 
-    // convenience method to rotate the axis system from a orthonormal system specified by basis{X,Y,Z}.
-    static void undoRotate(GL2 gl, Vector basisX, Vector basisY, Vector basisZ) {
-        double[] rotMatrix = {basisX.x(), basisY.x(), basisZ.x(), 0,
-                basisX.y(), basisY.y(), basisZ.y(), 0,
-                basisX.z(), basisY.z(), basisZ.z(), 0,
-                0, 0, 0, 1};
-
-        gl.glMultMatrixd(rotMatrix, 0);
-    }
-
+    /**
+     * Calculate and set the normal in the OpenGL context. The normal is calculated by using the cross product on
+     * two vectors specified by three points. The direction of the normal is determined by the right-hand rule.
+     *
+     * @param gl OpenGL context
+     * @param v1x First point's x-coordinate
+     * @param v1y First point's y-coordinate
+     * @param v1z First point's z-coordinate
+     * @param v2x Second point's x-coordinate
+     * @param v2y Second point's y-coordinate
+     * @param v2z Second point's z-coordinate
+     * @param v3x Third point's x-coordinate
+     * @param v3y Third point's y-coordinate
+     * @param v3z Third point's z-coordinate
+     */
     static void setNormalVertex3(GL2 gl,
                                 double v1x, double v1y, double v1z,
                                 double v2x, double v2y, double v2z,
@@ -68,7 +98,20 @@ class Util {
         gl.glNormal3d(normalX, normalY, normalZ);
     }
 
-    // Method to calculate and set the normal for a face defined by 3 vertices
+    /**
+     * Calculate and set the normal in the OpenGL context for three OpenGl points.
+     *
+     * @param gl OpenGL context
+     * @param v1x First point's x-coordinate
+     * @param v1y First point's y-coordinate
+     * @param v1z First point's z-coordinate
+     * @param v2x Second point's x-coordinate
+     * @param v2y Second point's y-coordinate
+     * @param v2z Second point's z-coordinate
+     * @param v3x Third point's x-coordinate
+     * @param v3y Third point's y-coordinate
+     * @param v3z Third point's z-coordinate
+     */
     static void makeFaceVertex3(GL2 gl,
                                 double v1x, double v1y, double v1z,
                                 double v2x, double v2y, double v2z,
@@ -83,7 +126,23 @@ class Util {
         gl.glVertex3d(v3x, v3y, v3z);
     }
 
-    // Wrapper to set the normal for faces defined by 4 vertices
+    /**
+     * Wrapper to calculate and set the normal in the OpenGL context for four OpenGl points.
+     *
+     * @param gl OpenGL context
+     * @param v1x First point's x-coordinate
+     * @param v1y First point's y-coordinate
+     * @param v1z First point's z-coordinate
+     * @param v2x Second point's x-coordinate
+     * @param v2y Second point's y-coordinate
+     * @param v2z Second point's z-coordinate
+     * @param v3x Third point's x-coordinate
+     * @param v3y Third point's y-coordinate
+     * @param v3z Third point's z-coordinate
+     * @param v4x Fourth point's x-coordinate
+     * @param v4y Fourth point's y-coordinate
+     * @param v4z Fourth point's z-coordinate
+     */
     static void makeFaceVertex4(GL2 gl,
                                 double v1x, double v1y, double v1z,
                                 double v2x, double v2y, double v2z,
@@ -97,7 +156,18 @@ class Util {
         gl.glVertex3d(v4x, v4y, v4z);
     }
 
-    // Method to return a point on a Bezier curve.
+    //
+
+    /**
+     * Calculate a point on a cubic Bezier curve.
+     *
+     * @param t parameter within [0,1]
+     * @param P0 Positional vector as first control point
+     * @param P1 Positional vector as second control point
+     * @param P2 Positional vector as third control point
+     * @param P3 Positional vector as fourth control point
+     * @return Point, as a positional vector, on the curve
+     */
     static public Vector getCubicBezierPnt(double t, Vector P0, Vector P1, Vector P2, Vector P3) {
 
         //Calculate the individual contributions of the 3 control points.
@@ -110,9 +180,17 @@ class Util {
         return p0Contribution.add(p1Contribution.add(p2Contribution.add(p3Contribution)));
     }
 
-    //Method to return the derivative of a point on a Bezier curve.
+    /**
+     * Calculate the slope of a tangent line at a point, specified by t, on a cubic Bezier curve.
+     *
+     * @param t parameter within [0,1]
+     * @param P0 Positional vector as first control point
+     * @param P1 Positional vector as second control point
+     * @param P2 Positional vector as third control point
+     * @param P3 Positional vector as fourth control point
+     * @return Slope of the tangent line
+     */
     static public Vector getCubicBezierTng(double t, Vector P0, Vector P1, Vector P2, Vector P3) {
-
         //The tangent of the cubic Bezier curve has 3 individual vector contributions, calculate these:
         Vector contribution1 = P1.subtract(P0);
         contribution1 = contribution1.scale(3 * Math.pow((1 - t), 2));
