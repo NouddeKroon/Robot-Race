@@ -77,7 +77,7 @@ public class RobotRace extends Base {
      */
     private final Camera camera;
 
-    int displayList;
+    int robotsDisplayList;
     boolean robotsInitialized;
 
     /**
@@ -188,7 +188,7 @@ public class RobotRace extends Base {
         Terrain.landscape = landscape;
 
         // Retrieve an id for the display list which is used to draw a second time for the Picture in Picture view
-        displayList = gl.glGenLists(1);
+        robotsDisplayList = gl.glGenLists(1);
 
         // Set to the current time such that when it is used for the first time to
         // calculate the time difference between frames it results in a minimal difference.
@@ -289,15 +289,21 @@ public class RobotRace extends Base {
         // Draw race track
         raceTrack.draw(gl);
 
-        // Draw the 4 robots.
+        /**
+         * We want to generate a display-list of the robots, which we call again for the picture in picture. However,
+         * since inside the robots also display-lists are being generated, and you are not allowed to do a glNewList
+         * call while compiling a display-list, we use the boolean robotsInitialized in order to make sure that for the first
+         * frame the robots are drawn normally (without generating a dispaylist of them). Afterwards robotsInitialized will
+         * always be true, and each frame we compile a new displaylist of the robots (which we then call again for the PiP).
+         */
         if (!robotsInitialized) {
-            for (int i = 0; i < robots.length; i++) {
+            for (int i = 0; i < robots.length; i++) {   //Draw each robot.
                 robots[i].drawAtPos(gl, glut);
             }
             robotsInitialized = true;
         } else {
-            gl.glNewList(displayList, GL_COMPILE_AND_EXECUTE);
-            for (int i = 0; i < robots.length; i++) {
+            gl.glNewList(robotsDisplayList, GL_COMPILE_AND_EXECUTE);
+            for (int i = 0; i < robots.length; i++) {           //Draw each robot.
                 robots[i].drawAtPos(gl, glut);
             }
             gl.glEndList();
@@ -306,6 +312,7 @@ public class RobotRace extends Base {
         // Draw terrain
         terrain.draw(gl);
 
+        //Finally draw the same scene but in the picture-in-picture frame.
         drawPictureInPicture();
     }
 
@@ -339,7 +346,9 @@ public class RobotRace extends Base {
         Vector cameraPos =new Vector(0,0,35);
         Vector up = new Vector(0,1,0);
 
-        // Update the view according to the camera mode
+        /**
+         * Update the view according to the fixed coordinate frame for the PiP camera.
+         */
         glu.gluLookAt(cameraPos.x(), cameraPos.y(), cameraPos.z(),
                 lookAt.x(), lookAt.y(), lookAt.z(),
                 up.x(), up.y(), up.z());
@@ -347,7 +356,8 @@ public class RobotRace extends Base {
         // Draw race track
         raceTrack.draw(gl);
 
-        gl.glCallList(displayList);
+        //
+        gl.glCallList(robotsDisplayList);
 
         // Draw terrain
         terrain.draw(gl);

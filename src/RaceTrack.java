@@ -460,8 +460,8 @@ class TrackCrossSectionDrawer{
             gl.glVertex3d(secondPointRightEdge.x(), secondPointRightEdge.y(), secondPointLeftEdge.z() - 1 + z);
 
             //If at any point both the vertex coordinates are below the terrain we can stop drawing.
-            if (firstPointLeftEdge.z() - 1 + z < firstPointHeightAtLeftEdge &&
-                    secondPointLeftEdge.z() - 1 + z < secondPointHeightAtLeftEdge) {
+            if (firstPointRightEdge.z() - 1 + z < firstPointHeightAtRightEdge &&
+                    secondPointRightEdge.z() - 1 + z < secondPointHeightAtRightEdge) {
                 break;
             }
         }
@@ -669,6 +669,14 @@ class StraightRoadSegment extends RoadSegment {
             //Draw the cross-section.
             TrackCrossSectionDrawer.drawCrossSection(gl,data,firstPoint,differenceVector,secondPoint,differenceVector);
         }
+        /**
+         * We generate an array holding the distance travelled on each lane (which is needed by the caller to keep track
+         * of distances of each segment.). For the case of the straight segment, the distance of each lane is just the
+         * length of the difference vector
+         */
+        double distance = differenceVector.length();
+        data.distanceData = new double[]{distance,distance,distance,distance};
+
     }
 
 

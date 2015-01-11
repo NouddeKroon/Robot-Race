@@ -8,12 +8,13 @@ import static javax.media.opengl.GL2GL3.*;
  * Implementation of the terrain.
  */
 class Terrain {
-    static Texture landscape;
+    static Texture landscape;           //The landscape texture.
     int displayList;                    //Variable pointing to the display list.
 
     /**
      * Draws the terrain. It calls the displaylist to draw itself, if it's already set, otherwise it enables the texture,
      * calls drawTerrain and stores it all in the displaylist.
+     * @param gl OpenGL context.
      */
     public void draw(GL2 gl) {
         if (displayList == 0) {
@@ -30,6 +31,7 @@ class Terrain {
 
     /**
      * Method that draws the terrain. Only gets called once, afterwards the terrain is drawn by displaylist.
+     * @param gl Opengl context.
      */
     private void drawTerrain(GL2 gl){
         float stepSize = 0.30f;
@@ -71,15 +73,21 @@ class Terrain {
     }
 
     /**
-     * Computes the elevation of the terrain at ({@code x}, {@code y}).
+     * Computes the elevation of the terrain at the given coordinates.
+     * @param x The x-coordinate.
+     * @param y the y-coordiante
+     * @return height of the terrain at the given coordinates.
      */
     static float heightAt(float x, float y) {
         return (float)(0.6 * Math.cos(0.3 * x + 0.2 * y) + 0.4 * Math.cos(x - 0.5*y));
     }
 
     /**
-     * Returns the normal vector at a given x and y. Calculates tangent in X directiont and tangent in Y. Returns cross
-     * product.
+     * Returns the normal vector of the terrain at a given x and y. Calculates tangent in X direction and tangent in Y.
+     * Returns cross product.
+     * @param x The x-coordinate.
+     * @param y the y-coordiante
+     * @return Normal of the terrain at the given coordinates.
      */
     private Vector getNormal(float x, float y) {
         Vector tangentX = new Vector(1,0,-0.3*0.6 * Math.sin(0.3 * x + 0.2 * y) - 0.4 * Math.sin(x - 0.5 * y));

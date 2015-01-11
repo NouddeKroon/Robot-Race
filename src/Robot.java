@@ -248,7 +248,9 @@ class Robot {
                 method makeFaceVertex4 to draw the quads, which automatically does the normal vectors, as long as we
                 make sure to define the vertices in a counterclockwise fashion (otherwise normal is inverted). */
             gl.glColor3f(headColor[0], headColor[1], headColor[2]);         //Set color to color of head.
-            //TODO(noud): Zou je iets bij de display lists kunnen schrijven?
+            /**
+             * If a displayList for head is already generated, we call it. Otherwise we generate and compile it.
+             */
             if (headDisplayList != 0) {
                 gl.glCallList(headDisplayList);
             } else {
@@ -494,7 +496,9 @@ class Robot {
 
             gl.glColor3f(lowerArmColor[0], lowerArmColor[1], lowerArmColor[2]);
 
-            //TODO(Noud): ook hier een comment over de display list graag.
+            /**
+             * If lowerArmConeDisplayList is already generated, we call it. Otherwise, we generate and compile the list.
+             */
             if (lowerArmConeDisplayList != 0) {
                 gl.glCallList(lowerArmConeDisplayList);
             } else {
@@ -663,7 +667,9 @@ class Robot {
                 */
             gl.glColor3f(hexPartColor[0], hexPartColor[1], hexPartColor[2]);        //Set color
 
-            //TODO(Noud): comments display list.
+            /**
+             * If lowerArmHexPartDisplayList is already generated, we call it. Otherwise we generate and compile the list.
+             */
             if (lowerArmHexPartDisplayList != 0) {
                 gl.glCallList(lowerArmHexPartDisplayList);
             } else {
@@ -770,7 +776,9 @@ class Robot {
             gl.glColor3f(clawColor[0], clawColor[1], clawColor[2]);
             gl.glTranslated(-diskRadius + 0.005, 0, 0.5 * diskHeight);
 
-            //TODO(Noud): comments display list.
+            /**
+             * If clawDisplayList is already generated we call it. Otherwise we generate and compile the list.
+             */
             if (clawDisplayList != 0){
                 gl.glCallList(clawDisplayList);
             } else {
