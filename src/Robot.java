@@ -30,6 +30,14 @@ class Robot {
     static final Vector upperToLowerLeg = new Vector(0, 0, -0.19);
     static final Vector lowerLegToFoot = new Vector(0, 0, -0.19);
 
+    // Dimensions for the head, also used by the camera to figure out first person view point
+    static final double headWidth = 1.0;
+    static final double headHeight = 0.5;
+    static final double headDepth = 0.25;
+
+    // Calculate the height defined by the previous dimensions, used by the camera.
+    static final double height = torsoTrans.z() + (neck.z() - rightHip.z()) / 2 + neck.z() + headHeight;
+
     // Head colors
     float[] neckColor;
     float[] headColor;
@@ -202,9 +210,6 @@ class Robot {
      * to the body. You can easily change the variables defined at the start of the method to reshape the head.
      */
     private void drawHead(GL2 gl, GLUT glut) {
-        double headWidth = 1.0;
-        double headHeight = 0.5;
-        double headDepth = 0.25;
         double neckSize = 0.10;
         double eyeRadius = 0.12;
         double eyeDepth = 0.05;
