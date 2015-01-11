@@ -150,7 +150,7 @@ class Robot {
         //If a new track is selected, reset the start distance so the robots start back at the start line.
         if (this.trackNr != track.trackNr) {
             this.distCovered = 0;
-            this.trackNr = gs.trackNr;
+            this.trackNr = track.trackNr;
         }
 
         // Get the previous tangent to calculate the incline

@@ -109,8 +109,8 @@ public class RobotRace extends Base {
      * camera, track, and terrain.
      */
     public RobotRace() {
-        // Initialize the race track as the basic oval track and set lanes to 4.
-        raceTrack = new RaceTrack(0, gs);
+        // Initialize the race track.
+        raceTrack = new RaceTrack(gs);
 
         // Create a new array of four robots
         robots = new Robot[4];
