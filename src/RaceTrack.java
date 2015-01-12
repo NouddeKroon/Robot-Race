@@ -142,7 +142,7 @@ class GenericTrack extends Track {
      */
     @Override
     void draw(GL2 gl) {
-        TextureData data = new TextureData();
+        TrackDrawingData data = new TrackDrawingData();
         distancesTablePerLane = new double[roadSegments.length + 1][4];
         for (int i = 0; i < roadSegments.length; i++) {
             roadSegments[i].draw(gl, data);
@@ -310,7 +310,7 @@ class TestTrack extends Track {
      * Method that draws the test track.
      */
     public void draw(GL2 gl) {
-        TextureData data = new TextureData();
+        TrackDrawingData data = new TrackDrawingData();
         gl.glColor3f(1f, 1f, 1f);
 
         /**
@@ -341,7 +341,7 @@ class TestTrack extends Track {
 /**
  * Class holding the relevant data during drawing of a track.
  */
-class TextureData {
+class TrackDrawingData {
     double leftEdgeTexCoorFirstPoint;
     double leftEdgeTexCoorSecondPoint;
     double rightEdgeTexCoorFirstPoint;
@@ -360,14 +360,14 @@ class TrackCrossSectionDrawer{
     /**
      * Draws a cross section of the track, going from a firstPointPos to a secondPointPos.
      * @param gl OpenGL context
-     * @param data TextureData class holding the texture data used in this cross section
+     * @param data TrackDrawingData class holding the texture data used in this cross section
      * @param firstPointPos The position of the first point.
      * @param firstPointTangent The tangent to the track at the first point.
      * @param secondPointPos The position of the second point.
      * @param secondPointTangent The tangent of the track at the second point.
      * @return An array holding the distance travelled on this cross section from point 1 to point 2, for each lane.
      */
-    static double[] drawCrossSection(GL2 gl, TextureData data, Vector firstPointPos, Vector firstPointTangent,
+    static double[] drawCrossSection(GL2 gl, TrackDrawingData data, Vector firstPointPos, Vector firstPointTangent,
                           Vector secondPointPos, Vector secondPointTangent) {
         /**
          * First calculate the vectors pointing to the left (relative to the tangent) for the first and second points,
@@ -594,7 +594,7 @@ abstract class RoadSegment {
 
 
     //Every road segment is able to draw itself. Returns the distance of the lanes in an array.
-    abstract void draw(GL2 gl, TextureData data);
+    abstract void draw(GL2 gl, TrackDrawingData data);
 
     //Every road segment is able to return a tangent vector, when given a relative distance travelled on the segment.
     abstract Vector getTangent(double s, int laneNr);
@@ -646,10 +646,10 @@ class StraightRoadSegment extends RoadSegment {
     /**
      * Method that draws the straight road segment.
      * @param gl OpenGL context.
-     * @param data TextureData object, containing texture data of previous road-segments.
+     * @param data TrackDrawingData object, containing texture data of previous road-segments.
      */
     @Override
-    void draw(GL2 gl, TextureData data) {
+    void draw(GL2 gl, TrackDrawingData data) {
         dt = 1 / (double) resolution;       //Step size is dependant on resolution.
         gl.glColor3f(1f, 1f, 1f);           //Set color to white to avoid interfering with texture.
 
@@ -742,11 +742,11 @@ class BezierRoadSegment extends RoadSegment {
 
     /**
      * Method that draws the Bezier segment of the track.
-     * @param data TextureData object
+     * @param data TrackDrawingData object
      * @param gl OpenGL context.
      */
     @Override
-    void draw(GL2 gl, TextureData data) {
+    void draw(GL2 gl, TrackDrawingData data) {
         dt = 1 / (double) resolution;    //Step size is determined by resolution.
         gl.glColor3f(1f, 1f, 1f);        //Set color to white to avoid interfering with texture.
 
