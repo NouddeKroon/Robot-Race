@@ -1350,9 +1350,8 @@ class Robot {
      * Draws this robot (as a {@code stickfigure} if specified).
      */
     public void draw(GL2 gl, GLUT glut) {
-        setMaterialProperties(gl);
         gl.glPushMatrix();
-
+        setMaterialProperties(gl);
         // Start with drawing the torso (translated such that the completed robot will stand on top off the origin)
         gl.glTranslated(torsoTrans.x(), torsoTrans.y(), torsoTrans.z());
         drawTorso(gl, glut);
